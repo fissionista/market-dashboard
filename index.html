@@ -73,6 +73,7 @@ input:focus,select:focus{border-color:var(--blue)}
 .pick input{width:auto}.chart-panel{min-height:430px;margin-top:10px}.fg-mood{font-size:28px;font-weight:900;line-height:1;color:#fff}.fg-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .search-results{display:grid;gap:5px;margin-top:6px}.search-result{display:flex;justify-content:space-between;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 8px;font-size:11px}
 .watch-table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:12px}.watch-table th{text-align:left;color:var(--muted);font-size:10px;letter-spacing:.7px;text-transform:uppercase;padding:0 10px 3px}.watch-table td{background:rgba(255,255,255,.035);border-top:1px solid rgba(92,104,137,.35);border-bottom:1px solid rgba(92,104,137,.35);padding:10px}.watch-table td:first-child{border-left:1px solid rgba(92,104,137,.35);border-radius:8px 0 0 8px}.watch-table td:last-child{border-right:1px solid rgba(92,104,137,.35);border-radius:0 8px 8px 0}.watch-symbol{font-weight:900;color:#fff}.watch-sub{font-size:10px;color:var(--muted);margin-top:2px}.watch-price{font-size:18px;font-weight:900;color:#fff}.mini-btn{padding:4px 7px;font-size:10px}.chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.chart-tile{background:#11151f;border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:360px}.chart-title{font-size:11px;font-weight:900;color:#dce3f8;padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)}
+.chart-card{background:linear-gradient(180deg,#151b28,#0f131d);border:1px solid rgba(92,104,137,.55);border-radius:10px;padding:12px;min-height:260px}.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}.chart-name{font-size:13px;font-weight:900}.chart-now{font-size:20px;font-weight:900;color:#fff;text-align:right}.chart-svg{width:100%;height:180px;display:block}.capture-card{background:#10131b;border:1px solid rgba(255,255,255,.13);border-radius:12px;padding:18px;max-width:760px}.capture-title{font-size:22px;font-weight:900;margin-bottom:12px}.capture-list{display:grid;gap:7px;font-size:20px;line-height:1.35}.capture-row{display:flex;gap:10px}.capture-bullet{color:#dfe5f4}.capture-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .hist-table{width:100%;border-collapse:collapse;font-size:11px}.hist-table th{text-align:left;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;white-space:nowrap}.hist-table td{padding:7px 8px;border-bottom:1px solid rgba(46,51,71,.4)}.hist-table tr:hover td{background:var(--surface2)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:14px}.modal-overlay.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;width:94%;max-width:620px;max-height:88vh;overflow-y:auto}.modal h2{font-size:15px;margin-bottom:12px}.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sect-label{font-size:10px;color:var(--muted);margin:16px 0 10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
@@ -129,12 +130,19 @@ input:focus,select:focus{border-color:var(--blue)}
     <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
     <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
     <div class="section">
-      <div class="section-title">실시간 시세표</div>
+      <div class="section-title">아침 캡쳐용 요약</div>
+      <div class="capture-card" id="morningCapture"></div>
+      <div class="capture-actions">
+        <button class="btn" onclick="copyMorningText()">요약 복사</button>
+        <button class="btn btn-blue" onclick="downloadMorningImage()">이미지 저장</button>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">선택 그래프</div>
       <div class="tv-controls">
-        <div class="section-title" style="margin-bottom:0">표시 항목 선택</div>
+        <div class="section-title" style="margin-bottom:0">그래프로 볼 항목 선택</div>
         <div class="pick-grid" id="tvPicker"></div>
       </div>
-      <div class="card" style="cursor:default"><table class="watch-table" id="watchTable"></table></div>
       <div class="chart-grid" id="defaultCharts"></div>
     </div>
   </div>
@@ -243,7 +251,7 @@ const DEFAULT_SECTORS=[
  {id:'space',name:'우주 / 방산',icon:'🚀',stocks:[['GE','GE에어로스페이스','US','항공엔진'],['RTX','레이시온','US',''],['PLTR','팔란티어','US','AI방산'],['RKLB','로켓랩','US',''],['JOBY','조비에비에이션','US','UAM'],['012450.KS','한화에어로스페이스','KR','방산'],['047810.KS','한국항공우주','KR','KF-21'],['079550.KS','LIG넥스원','KR','미사일']]},
  {id:'bigtech',name:'빅테크 / AI 소프트웨어',icon:'🤖',stocks:[['META','메타','US','SNS/AI광고'],['GOOGL','알파벳','US',''],['MSFT','마이크로소프트','US',''],['TSLA','테슬라','US','자율주행/로봇'],['AMZN','아마존','US',''],['AAPL','애플','US',''],['035420.KS','NAVER','KR',''],['035720.KS','카카오','KR','']]}
 ].map(s=>({...s,stocks:s.stocks.map(([ticker,name,country,note])=>({ticker,name,country,note}))}));
-let live={},manual={},refs={},snapshots=[],profiles={},activeProfile='기본',settings={},fearGreed=null,timer=null,activeFetch=false,lastTvKey='',lastChartKey='';
+let live={},historyData={},manual={},refs={},snapshots=[],profiles={},activeProfile='기본',settings={},fearGreed=null,timer=null,activeFetch=false,lastTvKey='',lastChartKey='';
 
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function seedProfiles(){return {'기본':{sectors:clone(DEFAULT_SECTORS)}}}
@@ -349,6 +357,15 @@ async function fetchFearGreed(){
  }catch(e){}
  return null;
 }
+async function fetchHistoryBatch(symbols){
+ if(location.protocol==='file:')return {};
+ try{
+   const res=await fetch(`/api/history?symbols=${symbols.map(encodeURIComponent).join(',')}&_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(12000)});
+   if(!res.ok)return {};
+   const data=await res.json();
+   return data.series||{};
+ }catch(e){return {}}
+}
 async function searchTicker(q){
  if(!q.trim())return [];
  try{
@@ -374,25 +391,22 @@ function mountTradingView(containerId,groups,height=470){
  script.innerHTML=JSON.stringify({colorTheme:'dark',isTransparent:true,locale:'kr',width:'100%',height,symbolsGroups:groups,showSymbolLogo:true});
  el.appendChild(script);
 }
-function mountChart(containerId,symbol,height=330){
- const el=document.getElementById(containerId);
- if(!el)return;
- el.innerHTML='<div class="tradingview-widget-container__widget"></div>';
- const script=document.createElement('script');
- script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
- script.async=true;
- script.innerHTML=JSON.stringify({autosize:true,symbol,interval:'D',timezone:'Asia/Seoul',theme:'dark',style:'1',locale:'kr',hide_top_toolbar:true,hide_side_toolbar:true,allow_symbol_change:true,calendar:false,support_host:'https://www.tradingview.com'});
- el.appendChild(script);
+function linePath(points,w=320,h=145,pad=10){
+ const vals=points.map(p=>p.close).filter(Number.isFinite);
+ if(vals.length<2)return '';
+ const min=Math.min(...vals),max=Math.max(...vals),span=max-min||1;
+ return points.map((p,i)=>{const x=pad+(i/(points.length-1))*(w-pad*2),y=pad+(1-(p.close-min)/span)*(h-pad*2);return `${i?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`}).join(' ');
+}
+function renderChartCard(item){
+ const sym=SYM[item.key], pts=historyData[sym]||[], p=getPrice(item.key), chg=getChangePct(item.key), path=linePath(pts);
+ const stroke=chg==null?'#5b9cf6':chg>=0?'#26d978':'#ff4d6d';
+ return `<div class="chart-card"><div class="chart-head"><div><div class="chart-name">${item.label}</div><div class="watch-sub">${sym||item.symbol}</div></div><div><div class="chart-now">${p!=null?fmt(p,item.key==='usdkrw'||item.key==='usdjpy'||item.key==='y10'||item.key==='vix'?2:0):'—'}</div>${chg!=null?`<span class="chip ${changeCls(chg)}">${fmtPct(chg)}</span>`:''}</div></div><svg class="chart-svg" viewBox="0 0 320 145" preserveAspectRatio="none"><defs><linearGradient id="fade-${item.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".32"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${path?`<path d="${path} L310 140 L10 140 Z" fill="url(#fade-${item.id})"/><path d="${path}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`:`<text x="160" y="76" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg></div>`;
 }
 function renderDefaultCharts(){
- const charts=[['S&P 500','FOREXCOM:SPXUSD'],['나스닥','NASDAQ:NDX'],['코스피','KRX:KOSPI']];
+ const charts=(settings.tvItems||DEFAULT_TV).filter(x=>x.on);
  const box=document.getElementById('defaultCharts');
  if(!box)return;
- const key=JSON.stringify(charts);
- if(key===lastChartKey)return;
- lastChartKey=key;
- box.innerHTML=charts.map((c,i)=>`<div class="chart-tile"><div class="chart-title">${c[0]}</div><div id="tv-chart-${i}" class="tradingview-widget-container" style="height:320px"></div></div>`).join('');
- charts.forEach(([,sym],i)=>mountChart('tv-chart-'+i,sym,320));
+ box.innerHTML=(charts.length?charts:DEFAULT_TV.slice(0,3)).map(renderChartCard).join('');
 }
 function renderTvPicker(){
  const box=document.getElementById('tvPicker'), sel=document.getElementById('chartSelect');
@@ -401,20 +415,9 @@ function renderTvPicker(){
 }
 function toggleTvItem(id,on){const item=settings.tvItems.find(x=>x.id===id);if(!item)return;item.on=on;if(on)settings.chartSymbol=item.symbol;save();lastTvKey='';renderTradingViewWidgets()}
 function setChartSymbol(symbol){settings.chartSymbol=symbol;save();lastTvKey='';renderTradingViewWidgets()}
-function renderWatchTable(items){
- const table=document.getElementById('watchTable');
- if(!table)return;
- const rows=items.map(item=>{
-   const p=getPrice(item.key), chg=getChangePct(item.key), high=getHigh52(item.key,null), dd=drawdown(p,high);
-   const value=item.key==='usdkrw'?`₩${fmt(p,2)}`:item.key==='y10'||item.key==='vix'||item.key==='dxy'||item.key==='usdjpy'?fmt(p,2):item.key==='gold'||item.key==='wti'||item.key==='btc'?`$${fmt(p,item.key==='btc'?0:2)}`:fmt(p);
-   return `<tr><td><div class="watch-symbol">${item.label}</div><div class="watch-sub">${item.symbol}</div></td><td><div class="watch-price">${p!=null?value:'—'}</div></td><td>${chg!=null?`<span class="chip ${changeCls(chg)}">${fmtPct(chg)}</span>`:'—'}</td><td>${dd!=null?`<span class="chip ${dd>=-10?'ch-g':dd>=-20?'ch-y':dd>=-35?'ch-o':'ch-r'}">${dd.toFixed(1)}%</span>`:'—'}</td></tr>`;
- }).join('');
- table.innerHTML=`<thead><tr><th>항목</th><th>현재값</th><th>등락</th><th>고점대비</th></tr></thead><tbody>${rows}</tbody>`;
-}
 function renderTradingViewWidgets(){
  renderTvPicker();
  const activeItems=(settings.tvItems||DEFAULT_TV).filter(x=>x.on);
- renderWatchTable(activeItems.length?activeItems:DEFAULT_TV);
  renderDefaultCharts();
  const marketGroups=[{name:'선택한 지표',symbols:(activeItems.length?activeItems:DEFAULT_TV).map(x=>({name:x.symbol,displayName:x.label}))}];
  const sectorGroups=sectors().map(sec=>({name:sec.name.slice(0,18),symbols:sec.stocks.slice(0,20).map(st=>({name:tvSymbolFromTicker(st.ticker,st.country),displayName:st.name||st.ticker}))})).filter(g=>g.symbols.length);
@@ -428,6 +431,8 @@ async function fetchAll(manualTrigger){
  if((settings.provider||'widget')==='widget'){activeFetch=false;setStatus('ok','시세표 보기 전용 모드 — 카드 계산은 수동입력/API 설정 사용');scheduleRefresh();return;}
  await fetchFearGreed();
  for(let i=0;i<symbols.length;i+=24){const batch=symbols.slice(i,i+24);const rows=await fetchQuoteBatch(batch);rows.forEach(q=>{if(q.regularMarketPrice!=null){live[q.symbol]={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol};done++;}});setStatus('load',`연결 중... ${done}/${symbols.length}`);renderAll();}
+ const chartSymbols=(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean);
+ historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};
  activeFetch=false;setStatus(done?'ok':'err',done?`✓ ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 (${done}/${symbols.length})`:'⚠ 갱신실패 — 수동입력 사용');scheduleRefresh();renderAll();
 }
 function scheduleRefresh(){if(timer)clearTimeout(timer);timer=setTimeout(()=>fetchAll(false),REFRESH_MS)}
@@ -450,7 +455,7 @@ function tbar(val,min,max,marks,statusFn){const pct=Math.min(100,Math.max(0,(val
 function ddChip(dd){if(dd==null)return '<span class="chip ch-b">고점 —</span>';const abs=Math.abs(dd);const cls=dd>=-10?'ch-g':dd>=-20?'ch-y':dd>=-35?'ch-o':'ch-r';return `<span class="chip ${cls}">고점대비 ${dd.toFixed(1)}%</span>`}
 function indexCard(label,key,refKey,badge){const p=getPrice(key),chg=getChangePct(key),high=getHigh52(key,refKey),dd=drawdown(p,high),newHigh=p!=null&&high!=null&&p>=high;return `<div class="card clickable ${newHigh?'c-purple':'c-info'}" onclick="openModal()"><div class="card-label">${label}${badge?` <span class="chip ch-p">${badge}</span>`:''}</div><div class="card-value">${p!=null?fmt(p):'<span style="font-size:16px;color:var(--muted)">—</span>'}</div><div class="card-sub">${high?`<span style="font-size:10px">고점 ${fmt(high)}</span>`:''}${ddChip(dd)}${chg!=null?`<span class="chip ${changeCls(chg)}">${fmtPct(chg)}</span>`:''}${newHigh?'<span class="chip ch-p">신고가</span>':''}</div></div>`}
 function priceCard(label,key,statusFn,prefix='',suffix='',markArgs=null){const p=getPrice(key),chg=getChangePct(key),s=p!=null?statusFn(p):{cls:'c-info',chip:'ch-b',label:'—'},high=getHigh52(key,null),dd=drawdown(p,high);return `<div class="card clickable ${s.cls}" onclick="openModal()"><div class="card-label">${label}</div><div class="card-value sm">${p!=null?(prefix+fmt(p,prefix==='$'?2:0)+(suffix?` <span style="font-size:13px">${suffix}</span>`:'')):'<span style="font-size:16px;color:var(--muted)">—</span>'}</div><div class="card-sub"><span class="chip ${s.chip}">${s.label}</span>${chg!=null?`<span style="${pctColor(chg)};font-size:11px;font-weight:800">${fmtPct(chg)}</span>`:''}${dd!=null?ddChip(dd):''}</div>${p!=null&&markArgs?tbar(p,markArgs[0],markArgs[1],markArgs[2],statusFn):''}</div>`}
-function renderAll(){renderProfiles();renderGlobal();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderTradingViewWidgets()}
+function renderAll(){renderProfiles();renderGlobal();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderMorningSummary();renderTradingViewWidgets()}
 function renderGlobal(){document.getElementById('global-indices').innerHTML=indexCard('S&P 500','sp','sp_ref')+indexCard('나스닥','nasdaq','nasdaq_ref')+priceCard('VIX','vix',vixStatus,'','',[0,50,[{v:15,label:'15'},{v:20,label:'20'},{v:30,label:'30'}]])+(()=>{const fg=getFearGreed();const s=fg!=null?fgStatus(fg):{label:'불러오는 중',color:'var(--muted)',chip:'ch-b'};const src=manual.fg!=null?'수동':'CNN';return `<div class="card clickable c-info" onclick="openModal()"><div class="card-label">Fear &amp; Greed <span class="chip ch-b">${src}</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div class="card-value" style="color:${s.color};margin-bottom:0">${fg!=null?Math.round(fg):'—'}</div><div class="fg-mood" style="color:${s.color}">${s.label}</div></div><div class="fg-meta"><span class="chip ${s.chip}">${fg!=null?`${Math.round(fg)}/100`:'대기'}</span><span style="font-size:11px;color:var(--muted)">${fearGreed?.timestamp?new Date(fearGreed.timestamp).toLocaleDateString('ko-KR'):'CNN 데이터'}</span></div></div>`})()}
 function renderKorea(){const kq=getPrice('kosdaq'),tgt=refs.kosdaq_target,kqPct=kq&&tgt?Math.min(100,kq/tgt*100).toFixed(0):null;document.getElementById('korea-indices').innerHTML=indexCard('코스피','kospi','kospi_ref')+`<div class="card clickable c-info" onclick="openModal()"><div class="card-label">코스닥 <span style="color:var(--muted)">/ 목표 ${fmt(tgt)}</span></div><div class="card-value sm">${kq!=null?fmt(kq):'<span style="color:var(--muted)">—</span>'}</div><div class="card-sub">${ddChip(drawdown(kq,getLive('kosdaq')?.high52w))}${kqPct?`목표달성률 <span class="chip ch-b">${kqPct}%</span>`:''}</div>${kqPct?`<div class="tbar"><div class="tbar-fill" style="width:${kqPct}%;background:var(--blue)"></div></div>`:''}</div>`}
 function renderYield(){const y10=getPrice('y10'),y5=getPrice('y5'),y2=manual.y2??null,spread=y10!=null&&y2!=null?y10-y2:null,inv=spread!=null&&spread<0;const row=(term,val)=>{if(val==null)return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:var(--muted)">—</div><div class="yield-bar-bg"></div></div>`;const s=yieldStatus(val),pct=Math.min(100,val/6*100),col=s.cls==='c-danger'?'var(--red)':s.cls==='c-warn'?'var(--yellow)':'var(--blue)';return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:${col}">${val.toFixed(2)}%</div><div style="flex:1"><div class="yield-bar-bg"><div class="yield-bar-fill" style="width:${pct}%;background:${col}"></div></div></div><span class="chip ${s.chip}">${s.label}</span></div>`};document.getElementById('yield-card').innerHTML=`<div class="card-label">수익률 곡선 ${spread!=null?`<span class="chip ${inv?'ch-r':'ch-g'}">${inv?'역전':'정상'} ${spread>0?'+':''}${spread.toFixed(2)}%</span>`:''}</div>${row('10Y',y10)}${row('5Y',y5)}${y2!=null?row('2Y',y2):'<div class="yield-row"><div class="yield-term">2Y</div><div style="font-size:11px;color:var(--muted)">수동입력 시 장단기 역전 판단</div></div>'}${y10!=null?tbar(y10,0,6,[{v:3,label:'3%'},{v:4,label:'4%'},{v:4.5,label:'4.5%'}],yieldStatus):''}`}
@@ -460,6 +465,11 @@ function renderCommodities(){document.getElementById('commodities').innerHTML=pr
 function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=manual.y2,items=[];if(fg!=null&&fg<10)items.push(['buy','한자리수 공포','Fear & Greed가 10 미만입니다. 소수몽키식 역발상 관점에서는 분할매수 후보를 압축해 볼 구간입니다.']);else if(fg!=null&&fg<=25)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);if(v!=null&&v>=30)items.push(['danger','VIX 30 이상','시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=20)items.push(['warn','VIX 20 이상','변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=4.5)items.push(['danger','10년물 4.5% 이상','성장주 밸류에이션 압박이 강한 구간입니다. 현금 비중과 매수 속도를 보수적으로 조절합니다.']);else if(y10!=null&&y10>=4)items.push(['warn','10년물 4% 이상','금리 부담이 남아 있습니다. AI/성장주 추격매수보다 조정 대기 전략이 낫습니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=1450)items.push(['warn','원달러 1,450원 이상','원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=105)items.push(['warn','DXY 105 이상','강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
 function renderAlerts(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('alertList').innerHTML=signalItems().slice(0,5).map(([t,h,m])=>`<div class="alert-item ${cls[t]||'al-info'}"><span><strong>${h}</strong> — ${m}</span></div>`).join('')}
 function renderSignals(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('signalList').innerHTML=signalItems().map(([t,h,m])=>`<div class="signal-item ${cls[t]||'al-info'}"><strong>${h}</strong>${m}</div>`).join('');document.getElementById('signalMeters').innerHTML=priceCard('VIX','vix',vixStatus)+priceCard('10Y 금리','y10',yieldStatus,'','%')+priceCard('USD/KRW','usdkrw',usdkrwStatus,'₩')+(()=>{const fg=getFearGreed(),s=fg!=null?fgStatus(fg):{chip:'ch-b',label:'불러오는 중',color:'var(--muted)'};return `<div class="card c-info"><div class="card-label">Fear & Greed</div><div class="card-value sm" style="color:${s.color}">${fg!=null?Math.round(fg):'—'}</div><div class="card-sub"><span class="chip ${s.chip}">${s.label}</span></div></div>`})()}
+function summaryLine(label,key,extra=''){const p=getPrice(key),high=getHigh52(key,null),dd=drawdown(p,high),chg=getChangePct(key);const val=p!=null?fmt(p,key==='usdkrw'||key==='usdjpy'||key==='y10'||key==='vix'?1:0):'—';const pct=dd!=null?` (${fmt(high,0)}/${dd.toFixed(0)}%)`:chg!=null?` (${fmtPct(chg)})`:'';return `${label} : ${val}${pct}${extra}`}
+function morningLines(){const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg).label:'—';const stocks=sectors().flatMap(s=>s.stocks).slice(0,6).map(st=>{const d=live[st.ticker],price=d?.price,high=d?.high52w,dd=drawdown(price,high);return `${st.name} : ${price!=null?fmtStockPrice(price,d?.currency):'—'}${dd!=null?` (${fmt(high,0)}/${dd.toFixed(0)}%)`:''}`});return ['지수 확인',summaryLine('S&P','sp'),summaryLine('나스닥','nasdaq'),summaryLine('코스피','kospi'),`코스닥 : ${fmt(getPrice('kosdaq'))} / ${fmt(refs.kosdaq_target)}`,`달러 환율 : ${fmt(getPrice('usdkrw'),1)} / ${fmt(getPrice('dxy'),1)}`,`달러엔 : ${fmt(getPrice('usdjpy'),1)} (${refs.jpy_sig||180}일때 주식, 부동산)`,summaryLine('WTI','wti'),summaryLine('금','gold'),summaryLine('비트코인','btc'),`VIX : ${fmt(getPrice('vix'),1)}`,`10Y : ${fmt(getPrice('y10'),2)} (4.5% ⚠)`,`2Y : ${manual.y2??'—'}`,...stocks,`Fear & Greed : ${fg!=null?Math.round(fg):'—'} ${fgs}`]}
+function renderMorningSummary(){const el=document.getElementById('morningCapture');if(!el)return;const lines=morningLines();el.innerHTML=`<div class="capture-title">${new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} ${lines[0]}</div><div class="capture-list">${lines.slice(1).map(l=>`<div class="capture-row"><span class="capture-bullet">•</span><span>${l}</span></div>`).join('')}</div>`}
+function copyMorningText(){navigator.clipboard?.writeText(morningLines().join('\n')).then(()=>alert('요약을 복사했습니다.')).catch(()=>alert('복사가 막혔습니다. 화면을 캡쳐해 주세요.'))}
+function downloadMorningImage(){const lines=morningLines(),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),w=900,pad=44,lineH=44;canvas.width=w;canvas.height=pad*2+lineH*(lines.length+1);ctx.fillStyle='#111';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#f4f4f4';ctx.font='700 34px Segoe UI, sans-serif';ctx.fillText(new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric'})+' '+lines[0],pad,pad+10);ctx.font='30px Segoe UI, sans-serif';lines.slice(1).forEach((l,i)=>ctx.fillText('•  '+l,pad,pad+60+i*lineH));const a=document.createElement('a');a.download='market-summary.png';a.href=canvas.toDataURL('image/png');a.click()}
 function ddStyle(dd){if(dd==null)return{cls:'dd-m',borderColor:'var(--border)',barColor:'var(--border)'};if(dd>=-10)return{cls:'dd-g',borderColor:'var(--green)',barColor:'var(--green)'};if(dd>=-20)return{cls:'dd-y',borderColor:'var(--yellow)',barColor:'var(--yellow)'};if(dd>=-35)return{cls:'dd-o',borderColor:'var(--orange)',barColor:'var(--orange)'};return{cls:'dd-r',borderColor:'var(--red)',barColor:'var(--red)'}}
 function renderStockCard(stock,sectorId){const t=stock.ticker.toUpperCase().trim(),d=live[t],price=d?.price??null,high=d?.high52w??null,chg=d?.changePct??null,currency=d?.currency??(stock.country==='KR'?'KRW':'USD'),dd=drawdown(price,high),dds=ddStyle(dd),bar=dd!=null?Math.min(100,Math.max(0,Math.abs(dd)/50*100)):0;return `<div class="scard" style="border-top:3px solid ${dds.borderColor}"><div class="scard-name">${stock.name||t}</div><div class="scard-ticker">${t}${stock.note?` · <span class="scard-note">${stock.note}</span>`:''}</div><div class="scard-price">${fmtStockPrice(price,currency)}</div><div class="scard-chg" style="color:${chg!=null?(chg>=0?'var(--green)':'var(--red)'):'var(--muted)'}">${chg!=null?fmtPct(chg):'—'}</div><div class="scard-divider"></div><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:var(--muted)">고점대비</span><span class="scard-dd ${dds.cls}">${dd!=null?dd.toFixed(1)+'%':'—'}</span></div><div class="dd-bar"><div class="dd-bar-fill" style="width:${bar}%;background:${dds.barColor}"></div></div><div class="scard-high" style="margin-top:5px">52W 고점 ${fmtStockPrice(high,currency)}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:9px"><button class="btn mini-btn" onclick="moveStock('${sectorId}','${t}',-1)">↑</button><button class="btn mini-btn" onclick="moveStock('${sectorId}','${t}',1)">↓</button><button class="btn btn-danger mini-btn" onclick="removeStock('${sectorId}','${t}')">삭제</button></div></div>`}
 function renderSectors(){document.getElementById('sectors-content').innerHTML=sectors().map(sec=>{const us=sec.stocks.filter(s=>s.country==='US'),kr=sec.stocks.filter(s=>s.country==='KR'),etc=sec.stocks.filter(s=>s.country!=='US'&&s.country!=='KR');const addForm=`<div class="toolbar" style="margin-top:10px"><div class="form-row"><div class="field"><label>티커</label><input id="tk_${sec.id}" placeholder="몰라도 됩니다"></div><div class="field grow"><label>종목명 검색</label><input id="nm_${sec.id}" placeholder="예: 엔비디아, 삼성전자, Palantir"></div><button class="btn" onclick="searchStock('${sec.id}')">검색</button><div class="field"><label>국가</label><select id="ct_${sec.id}"><option>US</option><option>KR</option><option>ETC</option></select></div><div class="field grow"><label>메모</label><input id="nt_${sec.id}" placeholder="관찰 이유"></div><button class="btn btn-green" onclick="addStock('${sec.id}')">종목 추가</button></div><div class="search-results" id="sr_${sec.id}"></div></div>`;return `<div class="sector-wrap"><div class="sector-head"><div class="sector-title"><span class="sector-icon">${sec.icon||'★'}</span><span class="sector-name">${sec.name}</span></div><div class="sector-actions"><button class="btn mini-btn" onclick="moveSector('${sec.id}',-1)">↑</button><button class="btn mini-btn" onclick="moveSector('${sec.id}',1)">↓</button><button class="btn btn-danger" onclick="removeSector('${sec.id}')">섹터 삭제</button></div></div>${us.length?`<div class="sector-country-lbl">🇺🇸 미국</div><div class="sector-grid">${us.map(s=>renderStockCard(s,sec.id)).join('')}</div>`:''}${kr.length?`<div class="sector-country-lbl">🇰🇷 한국</div><div class="sector-grid">${kr.map(s=>renderStockCard(s,sec.id)).join('')}</div>`:''}${etc.length?`<div class="sector-country-lbl">기타</div><div class="sector-grid">${etc.map(s=>renderStockCard(s,sec.id)).join('')}</div>`:''}${addForm}</div>`}).join('')||'<div class="card">등록된 섹터가 없습니다. 위에서 섹터를 추가하세요.</div>'}
