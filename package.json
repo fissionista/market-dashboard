@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "start": "vercel dev",
+    "dev": "vercel dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^39.0.0"
+  }
+}
