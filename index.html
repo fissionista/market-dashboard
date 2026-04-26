@@ -76,7 +76,7 @@ input:focus,select:focus{border-color:var(--blue)}
 .risk-label{font-weight:800}.risk-meta{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
 .signal-panel{display:grid;gap:10px;margin-top:12px}.mini-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 8px 18px rgba(54,79,125,.07)}
 .mini-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.mini-title{font-size:12px;font-weight:900;color:#111827}.mini-value{font-size:20px;font-weight:900;color:#111827}
-.mini-note{font-size:11px;line-height:1.5;color:var(--muted)}.mini-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:12px}.mini-row:first-of-type{border-top:0}
+.mini-note{font-size:11px;line-height:1.5;color:var(--muted)}.mini-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:12px}.mini-row:first-of-type{border-top:0}.mini-chart{border-top:1px solid var(--border);padding-top:8px}.mini-chart-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:900}
 .stage-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}.stage{border:1px solid var(--border);border-radius:8px;padding:7px 5px;text-align:center;font-size:10px;color:var(--muted);font-weight:800}.stage.on{border-color:var(--blue);background:var(--blue-dim);color:var(--blue)}.stage.buy{border-color:var(--green);background:var(--green-dim);color:var(--green)}.stage.warn{border-color:var(--yellow);background:var(--yellow-dim);color:var(--yellow)}
 .tv-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px;min-height:470px;overflow:hidden;box-shadow:0 12px 28px rgba(54,79,125,.09)}
 .tradingview-widget-container,.tradingview-widget-container__widget{width:100%;height:100%}
@@ -250,7 +250,7 @@ const DEFAULT_SECTORS=[
  {id:'semicon',name:'반도체 / AI 하드웨어',icon:'💾',stocks:[['NVDA','엔비디아','US','AI 핵심'],['AMD','AMD','US',''],['AVGO','브로드컴','US','AI 네트워킹'],['MU','마이크론','US','메모리'],['SOXX','SOXX ETF','US','반도체 ETF'],['ARM','ARM','US',''],['ASML','ASML','US','EUV'],['005930.KS','삼성전자','KR','DRAM, HBM'],['000660.KS','SK하이닉스','KR','HBM'],['042700.KS','한미반도체','KR','HBM장비'],['240810.KQ','원익IPS','KR','반도체 장비']]},
  {id:'aiinfra',name:'AI 인프라',icon:'🏗️',stocks:[['009150.KS','삼성전기','KR','MLCC/기판'],['007660.KS','이수페타시스','KR','MLCC/기판'],['LITE','루멘텀','US','광통신'],['COHR','코히런트','US','광통신'],['IREN','아이렌','US','데이터센터']]},
  {id:'future',name:'미래 유망산업 / 우주·양자',icon:'🚀',stocks:[['RKLB','로켓랩','US','우주'],['INFQ','인플렉션','US','양자'],['IONQ','아이온큐','US','양자']]},
- {id:'bigtech',name:'빅테크 / AI 소프트웨어',icon:'🤖',stocks:[['META','메타','US','SNS/AI광고'],['GOOGL','알파벳','US',''],['MSFT','마이크로소프트','US',''],['TSLA','테슬라','US','자율주행/로봇'],['AMZN','아마존','US',''],['AAPL','애플','US','']]}
+ {id:'bigtech',name:'빅테크 / AI 소프트웨어',icon:'🤖',stocks:[['META','메타','US','SNS/AI광고'],['GOOGL','알파벳','US',''],['MSFT','마이크로소프트','US',''],['PLTR','팔란티어','US','AI 소프트웨어'],['TSLA','테슬라','US','자율주행/로봇'],['AMZN','아마존','US',''],['AAPL','애플','US','']]}
 ].map(s=>({...s,stocks:s.stocks.map(([ticker,name,country,note])=>({ticker,name,country,note}))}));
 let live={},historyData={},manual={},refs={},snapshots=[],profiles={},activeProfile='기본',settings={},fearGreed=null,marketExtras=null,timer=null,activeFetch=false,lastTvKey='',lastChartKey='';
 
@@ -442,7 +442,7 @@ async function fetchAll(manualTrigger){
  if((settings.provider||'widget')==='widget'){activeFetch=false;setStatus('ok','시세표 보기 전용 모드 — 카드 계산은 수동입력/API 설정 사용');scheduleRefresh();return;}
  await Promise.allSettled([fetchFearGreed(),fetchMarketExtras()]);
  for(let i=0;i<symbols.length;i+=24){const batch=symbols.slice(i,i+24);const rows=await fetchQuoteBatch(batch);rows.forEach(q=>{if(q.regularMarketPrice!=null){live[q.symbol]={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol};done++;}});setStatus('load',`연결 중... ${done}/${symbols.length}`);renderAll();}
- const chartSymbols=(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean);
+ const chartSymbols=[...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
  historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};
  activeFetch=false;setStatus(done?'ok':'err',done?`✓ ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 (${done}/${symbols.length})`:'⚠ 갱신실패 — 수동입력 사용');scheduleRefresh();renderAll();
 }
@@ -523,9 +523,17 @@ function predictionCard(){
  const p=marketExtras?.prediction;
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 온도계</div><span class="chip ${p?.chip||'ch-b'}">${p?.label||'대기'}</span></div><div class="mini-note">${p?.note||'Polymarket/Kalshi에서 금리·침체·BTC·지정학 관련 확률을 붙일 수 있는 자리입니다. 연결 가능한 시장이 잡히면 자동 표시합니다.'}</div></div>`;
 }
+function miniSparkCard(title,value,series,color='var(--blue)',note=''){
+ const pts=series||[],path=linePath(pts,320,90,8);
+ return `<div class="mini-chart"><div class="mini-chart-head"><span>${title}</span><strong>${value||'—'}</strong></div><svg class="chart-svg" viewBox="0 0 320 90" preserveAspectRatio="none" style="height:90px">${path?`<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`:`<text x="160" y="48" text-anchor="middle" fill="#8b92ac" font-size="12">그래프 데이터 대기 중</text>`}</svg>${note?`<div class="mini-note">${note}</div>`:''}</div>`;
+}
+function riskChartsCard(){
+ const vix=getPrice('vix'),move=getPrice('move'),hy=marketExtras?.highYield;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ch-b">6개월</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${miniSparkCard('하이일드 스프레드',hy?.latest!=null?`${hy.latest.toFixed(2)}%`:'—',hy?.series,'var(--blue)',hy?.asOf?`FRED 기준 ${hy.asOf}`:'')}</div></div>`;
+}
 function renderSignalPanels(){
  const box=document.getElementById('signalPanels');if(!box)return;const e=earningsSeasonInfo();
- box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
+ box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}${riskChartsCard()}`;
 }
 function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=getPrice('y2'),items=[];if(fg!=null&&fg<10)items.push(['buy','한자리수 공포','Fear & Greed가 10 미만입니다. 소수몽키식 역발상 관점에서는 분할매수 후보를 압축해 볼 구간입니다.']);else if(fg!=null&&fg<=25)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);if(v!=null&&v>=30)items.push(['danger','VIX 30 이상','시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=20)items.push(['warn','VIX 20 이상','변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=4.5)items.push(['danger','10년물 4.5% 이상','성장주 밸류에이션 압박이 강한 구간입니다. 현금 비중과 매수 속도를 보수적으로 조절합니다.']);else if(y10!=null&&y10>=4)items.push(['warn','10년물 4% 이상','금리 부담이 남아 있습니다. AI/성장주 추격매수보다 조정 대기 전략이 낫습니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=1500)items.push(['warn','원달러 1,500원 이상','원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=105)items.push(['warn','DXY 105 이상','강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
 function renderAlerts(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('alertList').innerHTML=signalItems().slice(0,5).map(([t,h,m])=>`<div class="alert-item ${cls[t]||'al-info'}"><span><strong>${h}</strong> — ${m}</span></div>`).join('')}
