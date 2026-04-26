@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     const data = await fetchYahoo(symbols);
     const rows = data?.quoteResponse?.result || [];
     if (rows.length) {
-      res.status(200).json({ quoteResponse: { result: rows } });
+      res.status(200).json({ quoteResponse: { result: rows.map(normalizeQuote) } });
       return;
     }
   } catch {}
@@ -87,4 +87,17 @@ export default async function handler(req, res) {
   } catch (error) {
     res.status(502).json({ error: String(error?.message || error) });
   }
+}
+
+function normalizeQuote(q) {
+  return {
+    ...q,
+    regularMarketPrice: q.regularMarketPrice ?? null,
+    regularMarketPreviousClose: q.regularMarketPreviousClose ?? null,
+    regularMarketChangePercent: q.regularMarketChangePercent ?? null,
+    fiftyTwoWeekHigh: q.fiftyTwoWeekHigh || q.regularMarketPrice || null,
+    fiftyTwoWeekLow: q.fiftyTwoWeekLow || null,
+    currency: q.currency || 'USD',
+    shortName: q.shortName || q.symbol,
+  };
 }
