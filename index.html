@@ -99,18 +99,6 @@ input:focus,select:focus{border-color:var(--blue)}
   </div>
 
   <div class="tab-content active" id="tab-dashboard">
-    <div class="section">
-      <div class="section-title">실시간 시세표</div>
-      <div class="tv-controls">
-        <div class="section-title" style="margin-bottom:0">표시 항목 선택</div>
-        <div class="pick-grid" id="tvPicker"></div>
-        <div class="form-row">
-          <div class="field grow"><label>차트</label><select id="chartSelect" onchange="setChartSymbol(this.value)"></select></div>
-        </div>
-      </div>
-      <div class="tv-panel"><div id="tv-dashboard" class="tradingview-widget-container"></div></div>
-      <div class="tv-panel chart-panel"><div id="tv-chart" class="tradingview-widget-container"></div></div>
-    </div>
     <div class="section"><div class="section-title">글로벌 지수</div><div class="grid g4" id="global-indices"></div></div>
     <div class="section"><div class="section-title">국내 지수</div><div class="grid g2" id="korea-indices"></div></div>
     <div class="grid g2" style="margin-bottom:24px;gap:16px">
@@ -136,6 +124,18 @@ input:focus,select:focus{border-color:var(--blue)}
     </div>
     <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
     <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
+    <div class="section">
+      <div class="section-title">실시간 시세표</div>
+      <div class="tv-controls">
+        <div class="section-title" style="margin-bottom:0">표시 항목 선택</div>
+        <div class="pick-grid" id="tvPicker"></div>
+        <div class="form-row">
+          <div class="field grow"><label>차트</label><select id="chartSelect" onchange="setChartSymbol(this.value)"></select></div>
+        </div>
+      </div>
+      <div class="tv-panel"><div id="tv-dashboard" class="tradingview-widget-container"></div></div>
+      <div class="tv-panel chart-panel"><div id="tv-chart" class="tradingview-widget-container"></div></div>
+    </div>
   </div>
 
   <div class="tab-content" id="tab-sectors">
