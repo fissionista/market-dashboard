@@ -10,9 +10,21 @@ async function fetchSeries(symbol) {
   const data = await res.json();
   const result = data?.chart?.result?.[0];
   const timestamps = result?.timestamp || [];
-  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const quote = result?.indicators?.quote?.[0] || {};
+  const closes = quote.close || [];
+  const opens = quote.open || [];
+  const highs = quote.high || [];
+  const lows = quote.low || [];
+  const volumes = quote.volume || [];
   return timestamps
-    .map((ts, i) => ({ t: ts * 1000, close: closes[i] }))
+    .map((ts, i) => ({
+      t: ts * 1000,
+      close: closes[i],
+      open: Number.isFinite(opens[i]) ? opens[i] : null,
+      high: Number.isFinite(highs[i]) ? highs[i] : null,
+      low: Number.isFinite(lows[i]) ? lows[i] : null,
+      volume: Number.isFinite(volumes[i]) ? volumes[i] : null,
+    }))
     .filter((p) => Number.isFinite(p.close));
 }
 
