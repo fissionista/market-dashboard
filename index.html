@@ -103,6 +103,7 @@ input:focus,select:focus{border-color:var(--blue)}
   </div>
   <div class="hdr-right">
     <button class="btn" onclick="fetchAll(true)">↻ 새로고침</button>
+    <button class="btn btn-green" onclick="captureDashboard()">📷 캡쳐</button>
     <button class="btn" onclick="saveSnapshot()">📷 기록저장</button>
     <button class="btn btn-blue" onclick="openModal()">+ 수동입력</button>
   </div>
@@ -117,31 +118,32 @@ input:focus,select:focus{border-color:var(--blue)}
   </div>
 
   <div class="tab-content active" id="tab-dashboard">
-    <div class="section"><div class="section-title">글로벌 지수</div><div class="grid g4" id="global-indices"></div></div>
-    <div class="section"><div class="section-title">심리 / 변동성 요약</div><div class="grid g2" id="korea-indices"></div></div>
-    <div class="grid g2" style="margin-bottom:24px;gap:16px">
-      <div class="section" style="margin-bottom:0"><div class="section-title">금리 / 채권</div><div class="card" id="yield-card"></div></div>
-      <div class="section" style="margin-bottom:0">
-        <div class="section-title">심리 / 변동성</div>
-        <div class="card c-info" id="sentiment-card">
-          <div class="card-label">Fear &amp; Greed Index</div>
-          <div class="gauge-wrap">
-            <div class="gauge-arc">
-              <svg viewBox="0 0 160 85">
-                <defs><linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#ff4d6d"/><stop offset="35%" style="stop-color:#f5c542"/><stop offset="55%" style="stop-color:#5b9cf6"/><stop offset="78%" style="stop-color:#26d978"/><stop offset="100%" style="stop-color:#b97fff"/></linearGradient></defs>
-                <path d="M15 80 A65 65 0 0 1 145 80" fill="none" stroke="rgba(24,32,51,.10)" stroke-width="14" stroke-linecap="round"/>
-                <path id="gFill" d="M15 80 A65 65 0 0 1 145 80" fill="none" stroke="url(#gGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 204"/>
-                <line id="gNeedle" x1="80" y1="80" x2="80" y2="22" stroke="#111827" stroke-width="2.5" stroke-linecap="round" transform="rotate(0,80,80)"/><circle cx="80" cy="80" r="5" fill="#111827"/>
-              </svg>
-              <div class="gauge-center"><div class="gauge-val" id="fg-val">--</div><div class="gauge-lbl" id="fg-lbl">--</div></div>
+    <div id="dashboardCapture">
+      <div class="section"><div class="section-title">글로벌 지수</div><div class="grid g4" id="global-indices"></div></div>
+      <div class="grid g2" style="margin-bottom:24px;gap:16px">
+        <div class="section" style="margin-bottom:0"><div class="section-title">금리 / 채권</div><div class="card" id="yield-card"></div></div>
+        <div class="section" style="margin-bottom:0">
+          <div class="section-title">심리 / 변동성</div>
+          <div class="card c-info" id="sentiment-card">
+            <div class="card-label">Fear &amp; Greed Index</div>
+            <div class="gauge-wrap">
+              <div class="gauge-arc">
+                <svg viewBox="0 0 160 85">
+                  <defs><linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#ff4d6d"/><stop offset="35%" style="stop-color:#f5c542"/><stop offset="55%" style="stop-color:#5b9cf6"/><stop offset="78%" style="stop-color:#26d978"/><stop offset="100%" style="stop-color:#b97fff"/></linearGradient></defs>
+                  <path d="M15 80 A65 65 0 0 1 145 80" fill="none" stroke="rgba(24,32,51,.10)" stroke-width="14" stroke-linecap="round"/>
+                  <path id="gFill" d="M15 80 A65 65 0 0 1 145 80" fill="none" stroke="url(#gGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 204"/>
+                  <line id="gNeedle" x1="80" y1="80" x2="80" y2="22" stroke="#111827" stroke-width="2.5" stroke-linecap="round" transform="rotate(0,80,80)"/><circle cx="80" cy="80" r="5" fill="#111827"/>
+                </svg>
+                <div class="gauge-center"><div class="gauge-val" id="fg-val">--</div><div class="gauge-lbl" id="fg-lbl">--</div></div>
+              </div>
             </div>
+            <div id="vix-row" style="margin-top:12px"></div>
           </div>
-          <div id="vix-row" style="margin-top:12px"></div>
         </div>
       </div>
+      <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
+      <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
     </div>
-    <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
-    <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
     <div class="section">
       <div class="section-title">선택 그래프</div>
       <div class="tv-controls">
@@ -227,6 +229,7 @@ input:focus,select:focus{border-color:var(--blue)}
 </div>
 
 <script>
+const CAPTURE_LIB='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
 const STORAGE_KEY='mkt_custom_v1';
 const REFRESH_MS=5*60*1000;
 const SYM={sp:'^GSPC',nasdaq:'^IXIC',kospi:'^KS11',kosdaq:'^KQ11',vix:'^VIX',y10:'^TNX',y5:'^FVX',y2:'^IRX',usdkrw:'KRW=X',dxy:'DX-Y.NYB',usdjpy:'JPY=X',wti:'CL=F',gold:'GC=F',btc:'BTC-USD',hyg:'HYG',move:'^MOVE'};
@@ -441,16 +444,19 @@ async function fetchAll(manualTrigger){
  if(activeFetch&&!manualTrigger)return;activeFetch=true;const symbols=allSymbols();let done=0;setStatus('load',`연결 중... 0/${symbols.length}`);
  if((settings.provider||'widget')==='widget'){activeFetch=false;setStatus('ok','시세표 보기 전용 모드 — 카드 계산은 수동입력/API 설정 사용');scheduleRefresh();return;}
  await Promise.allSettled([fetchFearGreed(),fetchMarketExtras()]);
- for(let i=0;i<symbols.length;i+=24){const batch=symbols.slice(i,i+24);const rows=await fetchQuoteBatch(batch);rows.forEach(q=>{if(q.regularMarketPrice!=null){live[q.symbol]={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol};done++;}});setStatus('load',`연결 중... ${done}/${symbols.length}`);renderAll();}
- const chartSymbols=[...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
- historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};
+ for(let i=0;i<symbols.length;i+=24){const batch=symbols.slice(i,i+24);const rows=await fetchQuoteBatch(batch);rows.forEach(q=>{if(q.regularMarketPrice!=null){const keys=[q.symbol,normalizeSymbol(q.symbol)].filter(Boolean);const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol};keys.forEach(k=>live[k]=item);done++;}});setStatus('load',`연결 중... ${done}/${symbols.length}`);renderAll();}
+ const chartSymbols=[...symbols,...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
+ historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};applyHistoryHighs();
  activeFetch=false;setStatus(done?'ok':'err',done?`✓ ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 (${done}/${symbols.length})`:'⚠ 갱신실패 — 수동입력 사용');scheduleRefresh();renderAll();
 }
 function scheduleRefresh(){if(timer)clearTimeout(timer);timer=setTimeout(()=>fetchAll(false),REFRESH_MS)}
-function getLive(key){const sym=SYM[key];return sym?live[sym]:null}
+function normalizeSymbol(sym){return String(sym||'').toUpperCase().replace(/\.(KS|KQ)$/,'')}
+function getLive(key){const sym=SYM[key]||key;return live[sym]||live[normalizeSymbol(sym)]||null}
 function getPrice(key){return getLive(key)?.price??manual[key]??null}
 function getChangePct(key){return getLive(key)?.changePct??null}
-function getHigh52(key,refKey){return getLive(key)?.high52w??refs[refKey]??null}
+function getHistoryHigh(sym){const pts=historyData[sym]||historyData[normalizeSymbol(sym)]||[];const vals=pts.map(p=>p.close).filter(Number.isFinite);return vals.length?Math.max(...vals):null}
+function applyHistoryHighs(){Object.entries(SYM).forEach(([key,sym])=>{const h=getHistoryHigh(sym),item=getLive(key);if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)});Object.keys(live).forEach(sym=>{const h=getHistoryHigh(sym),item=live[sym];if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)})}
+function getHigh52(key,refKey){const sym=SYM[key]||key;return getLive(key)?.high52w??getHistoryHigh(sym)??refs[refKey]??null}
 function getFearGreed(){return manual.fg??fearGreed?.score??null}
 function drawdown(price,high){return price&&high?((price-high)/high*100):null}
 function fmt(n,dec=0){return n==null?'—':Number(n).toLocaleString('ko-KR',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
@@ -470,7 +476,7 @@ function indexCard(label,key,refKey,badge){const p=getPrice(key),chg=getChangePc
 function priceCard(label,key,statusFn,prefix='',suffix='',markArgs=null,extra=''){const p=getPrice(key),chg=getChangePct(key),s=p!=null?statusFn(p):{cls:'c-info',chip:'ch-b',label:'—'},high=getHigh52(key,null),dd=drawdown(p,high),cls=key==='gold'||key==='btc'?changeCardCls(chg,s.cls):s.cls;return `<div class="card clickable ${cls}" onclick="openModal()"><div class="card-label">${label}</div><div class="card-value sm">${p!=null?(prefix+fmt(p,prefix==='$'?2:0)+(suffix?` <span style="font-size:13px">${suffix}</span>`:'')):'<span style="font-size:16px;color:var(--muted)">—</span>'}</div><div class="card-sub"><span class="chip ${s.chip}">${s.label}</span>${chg!=null?`<span style="${pctColor(chg)};font-size:11px;font-weight:800">${fmtPct(chg)}</span>`:''}${dd!=null?ddChip(dd):''}${extra}</div>${p!=null&&markArgs?tbar(p,markArgs[0],markArgs[1],markArgs[2],statusFn):''}</div>`}
 function renderAll(){renderProfiles();renderGlobal();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderTradingViewWidgets()}
 function renderGlobal(){document.getElementById('global-indices').innerHTML=indexCard('S&P 500','sp','sp_ref')+indexCard('나스닥','nasdaq','nasdaq_ref')+indexCard('코스피','kospi','kospi_ref')+indexCard('코스닥','kosdaq',null)}
-function renderKorea(){document.getElementById('korea-indices').innerHTML=priceCard('VIX','vix',vixStatus,'','',[0,50,[{v:15,label:'15'},{v:20,label:'20'},{v:30,label:'30'}]])+(()=>{const fg=getFearGreed();const s=fg!=null?fgStatus(fg):{label:'불러오는 중',color:'var(--muted)',chip:'ch-b'};const src=manual.fg!=null?'수동':'CNN';return `<div class="card clickable c-info" onclick="openModal()"><div class="card-label">Fear &amp; Greed <span class="chip ch-b">${src}</span></div><div style="display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px"><div class="card-value" style="color:${s.color};margin-bottom:0">${fg!=null?Math.round(fg):'—'}</div><div class="fg-mood" style="color:${s.color};font-size:22px;text-align:right;word-break:keep-all">${s.label}</div></div><div class="fg-meta"><span class="chip ${s.chip}">${fg!=null?`${Math.round(fg)}/100`:'대기'}</span><span style="font-size:11px;color:var(--muted)">${fearGreed?.timestamp?new Date(fearGreed.timestamp).toLocaleDateString('ko-KR'):'CNN 데이터'}</span></div>${fg!=null&&fg<10?'<div class="card-sub" style="margin-top:8px"><span class="chip ch-r">한자리수 공포</span><span>분할매수 후보 구간</span></div>':''}</div>`})()}
+function renderKorea(){const el=document.getElementById('korea-indices');if(!el)return;el.innerHTML=''}
 function renderYield(){const y10=getPrice('y10'),y5=getPrice('y5'),y2=getPrice('y2'),spread=y10!=null&&y2!=null?y10-y2:null,inv=spread!=null&&spread<0;const row=(term,val)=>{if(val==null)return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:var(--muted)">—</div><div class="yield-bar-bg"></div></div>`;const s=yieldStatus(val),pct=Math.min(100,val/6*100),col=s.cls==='c-danger'?'var(--red)':s.cls==='c-warn'?'var(--yellow)':'var(--blue)';return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:${col}">${val.toFixed(2)}%</div><div style="flex:1"><div class="yield-bar-bg"><div class="yield-bar-fill" style="width:${pct}%;background:${col}"></div></div></div><span class="chip ${s.chip}">${s.label}</span></div>`};document.getElementById('yield-card').innerHTML=`<div class="card-label">수익률 곡선 ${spread!=null?`<span class="chip ${inv?'ch-r':'ch-g'}">${inv?'역전':'정상'} ${spread>0?'+':''}${spread.toFixed(2)}%</span>`:''}</div>${row('10Y',y10)}${row('5Y',y5)}${row('2Y',y2)}${y10!=null?tbar(y10,0,6,[{v:3,label:'3%'},{v:4,label:'4%'},{v:4.5,label:'4.5%'}],yieldStatus):''}`}
 function renderSentiment(){const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg):{label:'불러오는 중',color:'var(--muted)',chip:'ch-b'};document.getElementById('fg-val').textContent=fg!=null?Math.round(fg):'—';document.getElementById('fg-val').style.color=fgs.color;document.getElementById('fg-lbl').textContent='';if(fg!=null){const arc=204,fill=fg/100*arc;document.getElementById('gFill').setAttribute('stroke-dasharray',`${fill} ${arc-fill}`);document.getElementById('gNeedle').setAttribute('transform',`rotate(${-90+fg/100*180},80,80)`)}const vix=getPrice('vix'),vs=vix!=null?vixStatus(vix):{chip:'ch-b',label:'—'};document.getElementById('vix-row').innerHTML=`<div class="card-sub" style="justify-content:center;margin-bottom:10px"><span class="chip ${fgs.chip}">${fgs.label}</span>${fg!=null&&fg<10?'<span>분할매수 후보 구간</span>':''}</div><div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">VIX</span><span style="font-size:24px;font-weight:900">${vix!=null?fmt(vix,1):'—'}</span><span class="chip ${vs.chip}">${vs.label}</span></div>${vix!=null?tbar(vix,0,50,[{v:15,label:'안정'},{v:20,label:'주의'},{v:30,label:'위험'}],vixStatus):''}${fg!=null&&fg<10?'<div class="card-sub" style="margin-top:16px"><span class="chip ch-r">한자리수 공포</span><span>분할매수 후보 구간</span></div>':''}`}
 function renderForex(){const jpy=getPrice('usdjpy'),jSig=refs.jpy_sig??180,jpyAlert=jpy!=null&&jpy>=jSig*.95;document.getElementById('forex').innerHTML=priceCard('USD/KRW','usdkrw',usdkrwStatus,'₩','',[1100,1700,[{v:1300,label:'1300'},{v:1400,label:'1400'},{v:1500,label:'1500'}]])+priceCard('DXY 달러인덱스','dxy',v=>v>105?{cls:'c-danger',chip:'ch-r',label:'강달러'}:v>100?{cls:'c-warn',chip:'ch-y',label:'중립+'}:{cls:'c-safe',chip:'ch-g',label:'약달러'})+`<div class="card clickable ${jpyAlert?'c-warn':'c-info'}" onclick="openModal()"><div class="card-label">USD/JPY ${jpyAlert?'<span class="chip ch-y">접근</span>':''}</div><div class="card-value sm">${jpy!=null?fmt(jpy,1):'<span style="color:var(--muted)">—</span>'}</div><div class="card-sub">${jSig} 돌파 → 위험자산 바닥권 신호로 관찰</div>${jpy!=null?tbar(jpy,100,200,[{v:150,label:'150'},{v:160,label:'160'},{v:jSig,label:`${jSig}`}],v=>v>=jSig?{cls:'c-safe'}:v>=160?{cls:'c-warn'}:{cls:'c-info'}):''}</div>`}
@@ -497,7 +503,7 @@ function renderRiskChecklist(){
  const box=document.getElementById('riskChecklist');if(!box)return;
  const rows=buildRiskChecks(),known=rows.filter(r=>r.level!=='b'),red=known.filter(r=>r.level==='r').length,yellow=known.filter(r=>r.level==='y').length;
  const total=red*2+yellow,overall=red?'r':yellow>=2?'y':known.length?'g':'b';
- box.innerHTML=`<div class="risk-check"><div class="risk-head"><div class="risk-title">리스크 점검표</div><div class="risk-score" style="color:var(--${overall==='r'?'red':overall==='y'?'yellow':overall==='g'?'green':'muted'})">${riskText(overall)}${known.length?` · ${total}/10`:''}</div></div>${rows.map(r=>`<div class="risk-row"><span class="risk-dot dot-${r.level}"></span><span class="risk-label">${r.name}</span><span class="risk-meta">${r.meta}</span></div>`).join('')}</div>`;
+ box.innerHTML=`<div class="risk-check"><div class="risk-head"><div class="risk-title">리스크 점검표</div><div class="risk-score" style="color:var(--${overall==='r'?'red':overall==='y'?'yellow':overall==='g'?'green':'muted'})">${riskText(overall)}${known.length?` · ${total}/10`:''}</div></div>${rows.map(r=>`<div class="risk-row"><span class="risk-dot dot-${r.level}"></span><span class="risk-label">${r.name}</span><span class="risk-meta">${r.meta}</span></div>`).join('')}</div>${riskChartsCard()}`;
 }
 function earningsSeasonInfo(){
  const now=new Date(),y=now.getFullYear(),m=now.getMonth()+1,d=now.getDate(),starts=[1,4,7,10].map(mm=>new Date(y,mm-1,15));
@@ -533,7 +539,7 @@ function riskChartsCard(){
 }
 function renderSignalPanels(){
  const box=document.getElementById('signalPanels');if(!box)return;const e=earningsSeasonInfo();
- box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}${riskChartsCard()}`;
+ box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
 }
 function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=getPrice('y2'),items=[];if(fg!=null&&fg<10)items.push(['buy','한자리수 공포','Fear & Greed가 10 미만입니다. 소수몽키식 역발상 관점에서는 분할매수 후보를 압축해 볼 구간입니다.']);else if(fg!=null&&fg<=25)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);if(v!=null&&v>=30)items.push(['danger','VIX 30 이상','시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=20)items.push(['warn','VIX 20 이상','변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=4.5)items.push(['danger','10년물 4.5% 이상','성장주 밸류에이션 압박이 강한 구간입니다. 현금 비중과 매수 속도를 보수적으로 조절합니다.']);else if(y10!=null&&y10>=4)items.push(['warn','10년물 4% 이상','금리 부담이 남아 있습니다. AI/성장주 추격매수보다 조정 대기 전략이 낫습니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=1500)items.push(['warn','원달러 1,500원 이상','원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=105)items.push(['warn','DXY 105 이상','강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
 function renderAlerts(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('alertList').innerHTML=signalItems().slice(0,5).map(([t,h,m])=>`<div class="alert-item ${cls[t]||'al-info'}"><span><strong>${h}</strong> — ${m}</span></div>`).join('')}
@@ -557,6 +563,8 @@ function moveStock(id,ticker,dir){const sec=sectors().find(s=>s.id===id);if(!sec
 function saveSnapshot(){snapshots.unshift({ts:new Date().toLocaleString('ko-KR'),sp:getPrice('sp'),nasdaq:getPrice('nasdaq'),kospi:getPrice('kospi'),vix:getPrice('vix'),y10:getPrice('y10'),gold:getPrice('gold'),btc:getPrice('btc'),fg:getFearGreed()});if(snapshots.length>90)snapshots.pop();save();renderHistory();switchTabById('history')}
 function renderHistory(){document.getElementById('histBody').innerHTML=snapshots.map(s=>`<tr><td>${s.ts}</td><td>${s.sp!=null?fmt(s.sp):'—'}</td><td>${s.nasdaq!=null?fmt(s.nasdaq):'—'}</td><td>${s.kospi!=null?fmt(s.kospi):'—'}</td><td>${s.vix??'—'}</td><td>${s.y10!=null?s.y10+'%':'—'}</td><td>${s.gold!=null?'$'+fmt(s.gold):'—'}</td><td>${s.btc!=null?'$'+fmt(s.btc):'—'}</td><td>${s.fg!=null?`<span class="chip ${fgStatus(s.fg).chip}">${s.fg}</span>`:'—'}</td></tr>`).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:20px;text-align:center">상단 기록저장 버튼으로 스냅샷을 저장하세요</td></tr>'}
 function clearHistory(){if(confirm('기록을 모두 삭제하시겠습니까?')){snapshots=[];save();renderHistory()}}
+function loadCaptureLib(){return new Promise((resolve,reject)=>{if(window.html2canvas)return resolve(window.html2canvas);const s=document.createElement('script');s.src=CAPTURE_LIB;s.onload=()=>resolve(window.html2canvas);s.onerror=reject;document.head.appendChild(s)})}
+async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#f4f7fb',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 function buildManualFields(){document.getElementById('manualFields').innerHTML=MANUAL_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" id="m_${k}" step="0.01" placeholder="현재값"></div>`).join('')}
 function closeModal(){document.getElementById('editModal').classList.remove('open')}
 document.getElementById('editModal').addEventListener('click',e=>{if(e.target===document.getElementById('editModal'))closeModal()});
