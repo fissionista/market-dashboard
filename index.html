@@ -386,10 +386,10 @@ async function fetchMarketExtras(){
  if(location.protocol==='file:')return null;
  try{
    const res=await fetch(`/api/market-extras?_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(10000)});
-   if(!res.ok)return null;
+   if(!res.ok){marketExtras={_error:true,status:res.status};return marketExtras}
    marketExtras=await res.json();
    return marketExtras;
- }catch(e){return null}
+ }catch(e){marketExtras={_error:true};return marketExtras}
 }
 function tvSymbolFromTicker(ticker,country='US'){
  const usMap={CEG:'NASDAQ:CEG',GEV:'NYSE:GEV',BE:'NYSE:BE',VRT:'NYSE:VRT',ETN:'NYSE:ETN',VST:'NYSE:VST',OKLO:'NYSE:OKLO',EQT:'NYSE:EQT',NVDA:'NASDAQ:NVDA',AMD:'NASDAQ:AMD',AVGO:'NASDAQ:AVGO',MU:'NASDAQ:MU',SOXX:'NASDAQ:SOXX',ARM:'NASDAQ:ARM',ASML:'NASDAQ:ASML',LITE:'NASDAQ:LITE',COHR:'NYSE:COHR',IREN:'NASDAQ:IREN',GE:'NYSE:GE',RTX:'NYSE:RTX',PLTR:'NASDAQ:PLTR',RKLB:'NASDAQ:RKLB',INFQ:'NYSE:INFQ',IONQ:'NYSE:IONQ',JOBY:'NYSE:JOBY',META:'NASDAQ:META',GOOGL:'NASDAQ:GOOGL',MSFT:'NASDAQ:MSFT',TSLA:'NASDAQ:TSLA',AMZN:'NASDAQ:AMZN',AAPL:'NASDAQ:AAPL'};
@@ -482,6 +482,7 @@ function renderSentiment(){const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg):{la
 function renderForex(){const jpy=getPrice('usdjpy'),jSig=refs.jpy_sig??180,jpyAlert=jpy!=null&&jpy>=jSig*.95;document.getElementById('forex').innerHTML=priceCard('USD/KRW','usdkrw',usdkrwStatus,'₩','',[1100,1700,[{v:1300,label:'1300'},{v:1400,label:'1400'},{v:1500,label:'1500'}]])+priceCard('DXY 달러인덱스','dxy',v=>v>105?{cls:'c-danger',chip:'ch-r',label:'강달러'}:v>100?{cls:'c-warn',chip:'ch-y',label:'중립+'}:{cls:'c-safe',chip:'ch-g',label:'약달러'})+`<div class="card clickable ${jpyAlert?'c-warn':'c-info'}" onclick="openModal()"><div class="card-label">USD/JPY ${jpyAlert?'<span class="chip ch-y">접근</span>':''}</div><div class="card-value sm">${jpy!=null?fmt(jpy,1):'<span style="color:var(--muted)">—</span>'}</div><div class="card-sub">${jSig} 돌파 → 위험자산 바닥권 신호로 관찰</div>${jpy!=null?tbar(jpy,100,200,[{v:150,label:'150'},{v:160,label:'160'},{v:jSig,label:`${jSig}`}],v=>v>=jSig?{cls:'c-safe'}:v>=160?{cls:'c-warn'}:{cls:'c-info'}):''}</div>`}
 function renderCommodities(){const gold=getPrice('gold'),btc=getPrice('btc');document.getElementById('commodities').innerHTML=priceCard('WTI 원유','wti',wtiStatus,'$','',[40,130,[{v:70,label:'$70'},{v:90,label:'$90'},{v:100,label:'$100'}]])+priceCard('Gold (온스)','gold',v=>({cls:'c-purple',chip:'ch-p',label:'온스'}),'$','','',gold!=null?`<span class="krw-line">${fmtKrwValue(gold)} / oz</span>`:'')+priceCard('비트코인','btc',v=>v>100000?{cls:'c-safe',chip:'ch-g',label:'강세'}:v>60000?{cls:'c-info',chip:'ch-b',label:'보통'}:{cls:'c-warn',chip:'ch-y',label:'주의'},'$','','',btc!=null?`<span class="krw-line">${fmtKrwValue(btc)} / BTC</span>`:'')+`<div class="card c-info"><div class="card-label">경계값 요약</div><div style="font-size:11px;line-height:1.9;color:var(--muted)"><span style="color:var(--red)">10Y≥4.5%</span> 위험 · <span style="color:var(--yellow)">≥4.0%</span> 주의<br><span style="color:var(--red)">VIX≥30</span> 공포 · <span style="color:var(--yellow)">≥20</span> 변동성<br><span style="color:var(--green)">F&G≤25</span> 분할매수 관찰 · <span style="color:var(--green)">≤10</span> 강한 역발상<br><span style="color:var(--red)">달러≥1,500</span> 원화위험<br><span style="color:var(--green)">USD/JPY≥${refs.jpy_sig||180}</span> 바닥권 신호 관찰</div></div>`}
 function riskLevel(score){return score>=2?'r':score>=1?'y':'g'}
+function riskPoint(level){return level==='r'?1:0}
 function riskText(level){return level==='r'?'위험':level==='y'?'주의':level==='b'?'대기':'안정'}
 function riskMeta(parts){return parts.filter(Boolean).join(' · ')||'데이터 대기'}
 function buildRiskChecks(){
@@ -492,18 +493,18 @@ function buildRiskChecks(){
  const creditScore=(hygDd!=null&&hygDd<=-8)||(hygChg!=null&&hygChg<=-1.5)?2:(hygDd!=null&&hygDd<=-4)||(hygChg!=null&&hygChg<=-.5)?1:0;
  const liquidScore=(fg>=80||dxy>=105||uk>=1500)?2:(fg>=70||dxy>=100||uk>=1400)?1:0;
  return [
-  {name:'금리/달러 안정?',level:riskLevel(rateScore),meta:riskMeta([y10!=null?`10Y ${fmt(y10,2)}%`:'',dxy!=null?`DXY ${fmt(dxy,1)}`:'',uk!=null?`₩${fmt(uk)}`:''])},
+  {name:'금리/달러 안정?',level:riskLevel(rateScore),meta:riskMeta([y10!=null?`10Y ${fmt(y10,2)}%`:'',dxy!=null?`달러지수 ${fmt(dxy,1)}`:'',uk!=null?`₩${fmt(uk)}`:''])},
   {name:'유가/원자재 안정?',level:riskLevel(oilScore),meta:wti!=null?`WTI $${fmt(wti,1)}`:'데이터 대기'},
   {name:'변동성 지표 안정?',level:riskLevel(volScore),meta:riskMeta([vix!=null?`VIX ${fmt(vix,1)}`:'',move!=null?`MOVE ${fmt(move,0)}`:''])},
   {name:'신용위험 안정?',level:hyg==null?'b':riskLevel(creditScore),meta:riskMeta([hyg!=null?`HYG ${fmt(hyg,2)}`:'',hygChg!=null?fmtPct(hygChg):'',hygDd!=null?`고점 ${hygDd.toFixed(1)}%`:''])},
-  {name:'유동성 지표 긍정?',level:fg==null?'b':riskLevel(liquidScore),meta:riskMeta([fg!=null?`F&G ${Math.round(fg)}`:'',dxy!=null?`DXY ${fmt(dxy,1)}`:''])}
+  {name:'유동성 지표 긍정?',level:fg==null?'b':riskLevel(liquidScore),meta:riskMeta([fg!=null?`F&G ${Math.round(fg)}`:'',dxy!=null?`달러지수 ${fmt(dxy,1)}`:''])}
  ];
 }
 function renderRiskChecklist(){
  const box=document.getElementById('riskChecklist');if(!box)return;
  const rows=buildRiskChecks(),known=rows.filter(r=>r.level!=='b'),red=known.filter(r=>r.level==='r').length,yellow=known.filter(r=>r.level==='y').length;
- const total=red*2+yellow,overall=red?'r':yellow>=2?'y':known.length?'g':'b';
- box.innerHTML=`<div class="risk-check"><div class="risk-head"><div class="risk-title">리스크 점검표</div><div class="risk-score" style="color:var(--${overall==='r'?'red':overall==='y'?'yellow':overall==='g'?'green':'muted'})">${riskText(overall)}${known.length?` · ${total}/10`:''}</div></div>${rows.map(r=>`<div class="risk-row"><span class="risk-dot dot-${r.level}"></span><span class="risk-label">${r.name}</span><span class="risk-meta">${r.meta}</span></div>`).join('')}</div>${riskChartsCard()}`;
+ const total=rows.reduce((sum,r)=>sum+riskPoint(r.level),0),overall=red?'r':yellow>=2?'y':known.length?'g':'b';
+ box.innerHTML=`<div class="risk-check"><div class="risk-head"><div class="risk-title">리스크 점검표</div><div class="risk-score" style="color:var(--${overall==='r'?'red':overall==='y'?'yellow':overall==='g'?'green':'muted'})">${riskText(overall)} · ${total}/5</div></div>${rows.map(r=>`<div class="risk-row"><span class="risk-dot dot-${r.level}"></span><span class="risk-label">${r.name}</span><span class="risk-meta">${r.meta}</span></div>`).join('')}</div>${riskChartsCard()}`;
 }
 function earningsSeasonInfo(){
  const now=new Date(),y=now.getFullYear(),m=now.getMonth()+1,d=now.getDate(),starts=[1,4,7,10].map(mm=>new Date(y,mm-1,15));
@@ -517,17 +518,18 @@ function buyPlanCard(){
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">분할매수 구간</div><span class="chip ch-b">52주 고점 기준</span></div><div class="stage-grid">${items.map(x=>`<div class="stage ${x.cls}"><div>${x.label}</div><strong>${x.stage}</strong><br>${x.dd!=null?x.dd.toFixed(1)+'%':'—'}</div>`).join('')}</div><div class="mini-note" style="margin-top:8px">-20% 1차 · -30% 2차 · -40% 3차 후보로만 표시합니다.</div></div>`;
 }
 function kimchiCard(){
- const k=marketExtras?.kimchi;if(!k)return `<div class="mini-card"><div class="mini-head"><div class="mini-title">비트코인 김치프리미엄</div><span class="chip ch-b">대기</span></div><div class="mini-note">업비트/해외 BTC 가격 연결 대기 중입니다.</div></div>`;
+ const k=marketExtras?.kimchi;if(!k)return `<div class="mini-card"><div class="mini-head"><div class="mini-title">비트코인 김치프리미엄</div><span class="chip ${marketExtras?._error?'ch-r':'ch-b'}">${marketExtras?._error?'API 확인':'대기'}</span></div><div class="mini-note">${marketExtras?._error?'api/market-extras.js 업로드 또는 배포 상태를 확인해야 합니다.':'업비트/해외 BTC 가격 연결 대기 중입니다.'}</div></div>`;
  const p=k.premiumPct,chip=p>=7?'ch-r':p>=3?'ch-y':p<=-1?'ch-b':'ch-g',label=p>=7?'과열':p>=3?'국내수요 강함':p<=-1?'역프':'정상';
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">비트코인 김치프리미엄</div><span class="chip ${chip}">${label}</span></div><div class="mini-value" style="color:${p>=3?'var(--red)':p<=-1?'var(--blue)':'var(--green)'}">${p>0?'+':''}${p.toFixed(2)}%</div><div class="mini-note">업비트 ₩${fmt(k.upbitKrw)} · 해외환산 ₩${fmt(k.globalKrw)}</div></div>`;
 }
 function cashSentimentCard(){
  const mmf=marketExtras?.mmf,aaii=marketExtras?.aaii;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">대기자금 / 개미심리</div><span class="chip ch-b">보조지표</span></div><div class="mini-row"><span>MMF 현금</span><strong>${mmf?.totalText||'데이터 대기'}</strong></div><div class="mini-row"><span>AAII 개인심리</span><strong>${aaii?.spreadText||'데이터 대기'}</strong></div><div class="mini-note">현금이 많아도 주식 유입을 보장하진 않아서, 과열/공포 보조 신호로만 봅니다.</div></div>`;
+ const missing=marketExtras?._error?'API 연결 확인':'데이터 대기';
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">대기자금 / 개미심리</div><span class="chip ${marketExtras?._error?'ch-r':'ch-b'}">보조지표</span></div><div class="mini-row"><span>MMF 현금</span><strong>${mmf?.totalText||missing}</strong></div><div class="mini-row"><span>AAII 개인심리</span><strong>${aaii?.spreadText||missing}</strong></div><div class="mini-note">현금이 많아도 주식 유입을 보장하진 않아서, 과열/공포 보조 신호로만 봅니다.</div></div>`;
 }
 function predictionCard(){
  const p=marketExtras?.prediction;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 온도계</div><span class="chip ${p?.chip||'ch-b'}">${p?.label||'대기'}</span></div><div class="mini-note">${p?.note||'Polymarket/Kalshi에서 금리·침체·BTC·지정학 관련 확률을 붙일 수 있는 자리입니다. 연결 가능한 시장이 잡히면 자동 표시합니다.'}</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 온도계</div><span class="chip ${marketExtras?._error?'ch-r':p?.chip||'ch-b'}">${marketExtras?._error?'API 확인':p?.label||'대기'}</span></div><div class="mini-note">${marketExtras?._error?'api/market-extras.js가 배포되어야 자동 표시됩니다.':p?.note||'Polymarket에서 금리·침체·BTC·지정학 관련 확률을 붙일 수 있는 자리입니다. 연결 가능한 시장이 잡히면 자동 표시합니다.'}</div></div>`;
 }
 function miniSparkCard(title,value,series,color='var(--blue)',note=''){
  const pts=series||[],path=linePath(pts,320,90,8);
@@ -535,13 +537,13 @@ function miniSparkCard(title,value,series,color='var(--blue)',note=''){
 }
 function riskChartsCard(){
  const vix=getPrice('vix'),move=getPrice('move'),hy=marketExtras?.highYield;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ch-b">6개월</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${miniSparkCard('하이일드 스프레드',hy?.latest!=null?`${hy.latest.toFixed(2)}%`:'—',hy?.series,'var(--blue)',hy?.asOf?`FRED 기준 ${hy.asOf}`:'')}</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ${marketExtras?._error?'ch-r':'ch-b'}">6개월</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${miniSparkCard('하이일드 스프레드',hy?.latest!=null?`${hy.latest.toFixed(2)}%`:'—',hy?.series,'var(--blue)',hy?.asOf?`FRED 기준 ${hy.asOf}`:(marketExtras?._error?'api/market-extras.js 연결 확인 필요':''))}</div></div>`;
 }
 function renderSignalPanels(){
  const box=document.getElementById('signalPanels');if(!box)return;const e=earningsSeasonInfo();
  box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
 }
-function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=getPrice('y2'),items=[];if(fg!=null&&fg<10)items.push(['buy','한자리수 공포','Fear & Greed가 10 미만입니다. 소수몽키식 역발상 관점에서는 분할매수 후보를 압축해 볼 구간입니다.']);else if(fg!=null&&fg<=25)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);if(v!=null&&v>=30)items.push(['danger','VIX 30 이상','시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=20)items.push(['warn','VIX 20 이상','변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=4.5)items.push(['danger','10년물 4.5% 이상','성장주 밸류에이션 압박이 강한 구간입니다. 현금 비중과 매수 속도를 보수적으로 조절합니다.']);else if(y10!=null&&y10>=4)items.push(['warn','10년물 4% 이상','금리 부담이 남아 있습니다. AI/성장주 추격매수보다 조정 대기 전략이 낫습니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=1500)items.push(['warn','원달러 1,500원 이상','원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=105)items.push(['warn','DXY 105 이상','강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
+function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=getPrice('y2'),items=[];if(fg!=null&&fg<10)items.push(['buy','한자리수 공포','Fear & Greed가 10 미만입니다. 소수몽키식 역발상 관점에서는 분할매수 후보를 압축해 볼 구간입니다.']);else if(fg!=null&&fg<=25)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);if(v!=null&&v>=30)items.push(['danger','VIX 30 이상','시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=20)items.push(['warn','VIX 20 이상','변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=4.5)items.push(['danger','10년물 4.5% 이상','금리 부담이 큰 구간입니다. 지수와 성장주의 변동성 확대 가능성을 같이 봅니다.']);else if(y10!=null&&y10>=4)items.push(['warn','10년물 4% 이상','금리 부담이 남아 있습니다. 환율, 달러지수, 변동성 지표를 함께 확인합니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=1500)items.push(['warn','원달러 1,500원 이상','원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=105)items.push(['warn','달러지수 105 이상','강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
 function renderAlerts(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('alertList').innerHTML=signalItems().slice(0,5).map(([t,h,m])=>`<div class="alert-item ${cls[t]||'al-info'}"><span><strong>${h}</strong> — ${m}</span></div>`).join('')}
 function renderSignals(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};renderRiskChecklist();renderSignalPanels();document.getElementById('signalList').innerHTML=signalItems().map(([t,h,m])=>`<div class="signal-item ${cls[t]||'al-info'}"><strong>${h}</strong>${m}</div>`).join('');document.getElementById('signalMeters').innerHTML=priceCard('VIX','vix',vixStatus)+priceCard('10Y 금리','y10',yieldStatus,'','%')+priceCard('USD/KRW','usdkrw',usdkrwStatus,'₩')+(()=>{const fg=getFearGreed(),s=fg!=null?fgStatus(fg):{chip:'ch-b',label:'불러오는 중',color:'var(--muted)'};return `<div class="card c-info"><div class="card-label">Fear & Greed</div><div class="card-value sm" style="color:${s.color}">${fg!=null?Math.round(fg):'—'}</div><div class="card-sub"><span class="chip ${s.chip}">${s.label}</span></div></div>`})()}
 function ddStyle(dd){if(dd==null)return{cls:'dd-m',borderColor:'var(--border)',barColor:'var(--border)'};if(dd>=-10)return{cls:'dd-g',borderColor:'var(--green)',barColor:'var(--green)'};if(dd>=-20)return{cls:'dd-y',borderColor:'var(--yellow)',barColor:'var(--yellow)'};if(dd>=-35)return{cls:'dd-o',borderColor:'var(--orange)',barColor:'var(--orange)'};return{cls:'dd-r',borderColor:'var(--red)',barColor:'var(--red)'}}
