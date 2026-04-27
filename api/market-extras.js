@@ -1,5 +1,6 @@
 async function getJson(url) {
   const res = await fetch(url, {
+    signal: AbortSignal.timeout(6500),
     headers: {
       accept: 'application/json,text/plain,*/*',
       'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
@@ -11,6 +12,7 @@ async function getJson(url) {
 
 async function getText(url) {
   const res = await fetch(url, {
+    signal: AbortSignal.timeout(6500),
     headers: {
       accept: 'text/html,text/plain,*/*',
       'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
