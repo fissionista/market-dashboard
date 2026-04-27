@@ -1,5 +1,5 @@
 async function fetchSeries(symbol) {
-  const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=6mo`;
+  const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1y`;
   const res = await fetch(url, {
     headers: {
       accept: 'application/json,text/plain,*/*',

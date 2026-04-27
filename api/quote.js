@@ -6,6 +6,13 @@ const FIELDS = [
   'fiftyTwoWeekLow',
   'currency',
   'shortName',
+  'trailingPE',
+  'forwardPE',
+  'priceToSalesTrailing12Months',
+  'trailingEps',
+  'forwardEps',
+  'earningsQuarterlyGrowth',
+  'revenueGrowth',
 ].join(',');
 
 async function fetchYahoo(symbols) {
