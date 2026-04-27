@@ -262,7 +262,7 @@ const DEFAULT_SECTORS=[
  {id:'future',name:'미래 유망산업 / 우주·양자',icon:'🚀',stocks:[['RKLB','로켓랩','US','우주'],['INFQ','인플렉션','US','양자'],['IONQ','아이온큐','US','양자']]},
  {id:'bigtech',name:'빅테크 / AI 소프트웨어',icon:'🤖',stocks:[['META','메타','US','SNS/AI광고'],['GOOGL','알파벳','US',''],['MSFT','마이크로소프트','US',''],['PLTR','팔란티어','US','AI 소프트웨어'],['TSLA','테슬라','US','자율주행/로봇'],['AMZN','아마존','US',''],['AAPL','애플','US','']]}
 ].map(s=>({...s,stocks:s.stocks.map(([ticker,name,country,note])=>({ticker,name,country,note}))}));
-let live={},historyData={},manual={},refs={},snapshots=[],profiles={},activeProfile='기본',settings={},fearGreed=null,marketExtras=null,timer=null,activeFetch=false,lastTvKey='',lastChartKey='';
+let live={},historyData={},manual={},refs={},snapshots=[],profiles={},activeProfile='기본',settings={},fearGreed=null,marketExtras=null,highYieldData=null,timer=null,activeFetch=false,lastTvKey='',lastChartKey='';
 
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function seedProfiles(){return {'기본':{sectors:clone(DEFAULT_SECTORS)}}}
@@ -395,8 +395,19 @@ async function fetchMarketExtras(){
    const res=await fetch(`/api/market-extras?_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(10000)});
    if(!res.ok){marketExtras={_error:true,status:res.status};return marketExtras}
    marketExtras=await res.json();
+   if(marketExtras?.highYield)highYieldData=marketExtras.highYield;
    return marketExtras;
  }catch(e){marketExtras={_error:true};return marketExtras}
+}
+async function fetchHighYield(){
+ if(location.protocol==='file:')return null;
+ try{
+   const res=await fetch(`/api/high-yield?_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(9000)});
+   if(!res.ok)return null;
+   const data=await res.json();
+   if(data?.series?.length)highYieldData=data;
+   return data;
+ }catch(e){return null}
 }
 function tvSymbolFromTicker(ticker,country='US'){
  const usMap={CEG:'NASDAQ:CEG',GEV:'NYSE:GEV',BE:'NYSE:BE',VRT:'NYSE:VRT',ETN:'NYSE:ETN',VST:'NYSE:VST',OKLO:'NYSE:OKLO',EQT:'NYSE:EQT',NVDA:'NASDAQ:NVDA',AMD:'NASDAQ:AMD',AVGO:'NASDAQ:AVGO',MU:'NASDAQ:MU',SOXX:'NASDAQ:SOXX',ARM:'NASDAQ:ARM',ASML:'NASDAQ:ASML',LITE:'NASDAQ:LITE',COHR:'NYSE:COHR',IREN:'NASDAQ:IREN',GE:'NYSE:GE',RTX:'NYSE:RTX',PLTR:'NASDAQ:PLTR',RKLB:'NASDAQ:RKLB',INFQ:'NYSE:INFQ',IONQ:'NYSE:IONQ',JOBY:'NYSE:JOBY',META:'NASDAQ:META',GOOGL:'NASDAQ:GOOGL',MSFT:'NASDAQ:MSFT',TSLA:'NASDAQ:TSLA',AMZN:'NASDAQ:AMZN',AAPL:'NASDAQ:AAPL'};
@@ -450,7 +461,7 @@ function renderTradingViewWidgets(){
 async function fetchAll(manualTrigger){
  if(activeFetch&&!manualTrigger)return;activeFetch=true;const symbols=allSymbols();let done=0;setStatus('load',`연결 중... 0/${symbols.length}`);
  if((settings.provider||'widget')==='widget'){activeFetch=false;setStatus('ok','시세표 보기 전용 모드 — 카드 계산은 수동입력/API 설정 사용');maybeAutoSnapshot();scheduleRefresh();return;}
- await Promise.allSettled([fetchFearGreed(),fetchMarketExtras()]);
+ await Promise.allSettled([fetchFearGreed(),fetchMarketExtras(),fetchHighYield()]);
  for(let i=0;i<symbols.length;i+=24){const batch=symbols.slice(i,i+24);const rows=await fetchQuoteBatch(batch);rows.forEach(q=>{if(q.regularMarketPrice!=null){const keys=[q.symbol,normalizeSymbol(q.symbol)].filter(Boolean);const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol};keys.forEach(k=>live[k]=item);done++;}});setStatus('load',`연결 중... ${done}/${symbols.length}`);renderAll();}
  const chartSymbols=[...symbols,...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
  historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};applyHistoryHighs();
@@ -537,15 +548,15 @@ function cashSentimentCard(){
 }
 function predictionCard(){
  const p=marketExtras?.prediction;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 온도계</div><span class="chip ${marketExtras?._error?'ch-r':p?.chip||'ch-b'}">${marketExtras?._error?'API 확인':p?.label||'대기'}</span></div><div class="mini-note">${marketExtras?._error?'api/market-extras.js가 배포되어야 자동 표시됩니다.':p?.note||'Polymarket에서 금리·침체·BTC·지정학 관련 확률을 붙일 수 있는 자리입니다. 연결 가능한 시장이 잡히면 자동 표시합니다.'}</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 참고 확률</div><span class="chip ${marketExtras?._error?'ch-r':p?.chip||'ch-b'}">${marketExtras?._error?'API 확인':p?.label||'대기'}</span></div><div class="mini-note">${marketExtras?._error?'api/market-extras.js가 배포되어야 자동 표시됩니다.':p?.note||'Polymarket 거래량 상위 매크로 이벤트 1개의 현재 확률입니다. 시장 심리 참고용이며 매수/매도 신호는 아닙니다.'}</div></div>`;
 }
 function miniSparkCard(title,value,series,color='var(--blue)',note=''){
  const pts=series||[],path=linePath(pts,320,90,8);
  return `<div class="mini-chart"><div class="mini-chart-head"><span>${title}</span><strong>${value||'—'}</strong></div><svg class="chart-svg" viewBox="0 0 320 90" preserveAspectRatio="none" style="height:90px">${path?`<path d="${path}" fill="none" stroke="${color}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`:`<text x="160" y="48" text-anchor="middle" fill="#8b92ac" font-size="12">그래프 데이터 대기 중</text>`}</svg>${note?`<div class="mini-note">${note}</div>`:''}</div>`;
 }
 function riskChartsCard(){
- const vix=getPrice('vix'),move=getPrice('move'),hy=marketExtras?.highYield;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ${marketExtras?._error?'ch-r':'ch-b'}">6개월</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${miniSparkCard('하이일드 스프레드',hy?.latest!=null?`${hy.latest.toFixed(2)}%`:'—',hy?.series,'var(--blue)',hy?.asOf?`FRED 기준 ${hy.asOf}`:(marketExtras?._error?'api/market-extras.js 연결 확인 필요':''))}</div></div>`;
+ const vix=getPrice('vix'),move=getPrice('move'),hy=marketExtras?.highYield||highYieldData;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ${hy?.series?.length?'ch-b':'ch-y'}">6개월</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${miniSparkCard('하이일드 스프레드',hy?.latest!=null?`${hy.latest.toFixed(2)}%`:'—',hy?.series,'var(--blue)',hy?.asOf?`FRED 기준 ${hy.asOf}`:'FRED BAMLH0A0HYM2 연결 대기')}</div></div>`;
 }
 function renderSignalPanels(){
  const box=document.getElementById('signalPanels');if(!box)return;const e=earningsSeasonInfo();

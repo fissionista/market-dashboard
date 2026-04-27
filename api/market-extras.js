@@ -143,7 +143,8 @@ async function getPrediction() {
     return {
       label: Number.isFinite(price) ? `${Math.round(price * 100)}%` : '연결됨',
       chip: Number.isFinite(price) && price >= .7 ? 'ch-y' : 'ch-b',
-      note: `거래량 상위 매크로 예측시장: "${macro.question || macro.slug}"`,
+      question: macro.question || macro.slug,
+      note: `Polymarket 거래량 상위 매크로 이벤트: "${macro.question || macro.slug}"`,
     };
   } catch {
     return null;
