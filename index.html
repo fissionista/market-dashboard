@@ -617,6 +617,67 @@ input:focus,select:focus{border-color:#9db7de;box-shadow:0 0 0 3px rgba(35,95,19
   .rotation-item{grid-template-columns:1fr 1fr}
   .band-grid,.panel-split{grid-template-columns:1fr 1fr}
 }
+
+/* Mobile and capture polish */
+html,body{overflow-x:hidden}
+.card,.scard,.mini-card,.signal-item,.risk-check,.high-report,.chart-card,.chart-tile,.toolbar,.tv-controls,.axis-card,.check-card,.rank-item{min-width:0}
+.section-title{font-size:14px;margin-bottom:11px;color:#243044}
+.card-label,.scard-name,.mini-title,.risk-title,.chart-name,.axis-value,.check-title{overflow-wrap:anywhere;word-break:keep-all}
+.card-value,.card-value.sm,.mini-value,.chart-now,.yield-val,.watch-price,.chart-modal-price{max-width:100%;overflow-wrap:anywhere}
+.card-sub,.mini-note,.signal-note,.axis-note,.risk-meta,.rotation-sub,.check-note{overflow-wrap:anywhere;word-break:keep-all}
+.chip{max-width:100%;white-space:normal;text-align:center}
+.capture-preview{
+  position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;
+  padding:18px;background:rgba(15,23,42,.54);backdrop-filter:blur(8px)
+}
+.capture-preview.open{display:flex}
+.capture-preview-card{width:min(94vw,520px);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(15,23,42,.25);padding:14px}
+.capture-preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.capture-preview-title{font-size:15px;font-weight:900;color:var(--text)}
+.capture-preview img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--border);background:#f7f9fc}
+.capture-preview-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+@media(max-width:600px){
+  header{display:grid;grid-template-columns:1fr auto;min-height:auto;padding:9px 10px}
+  .logo{font-size:18px}
+  .hdr-mid{grid-column:1/-1;grid-row:2;max-width:none;margin-top:3px}
+  #refreshStatus{max-width:none;font-size:11px}
+  .hdr-right{justify-content:flex-end}
+  .hdr-right .btn,.btn{font-size:12px;height:34px;padding:0 9px}
+  .mini-btn{min-width:40px;height:40px;padding:0 10px}
+  .scard-actions .mini-btn{height:40px;min-width:40px}
+  main{padding:12px 10px 28px}
+  .tabs{margin-bottom:16px}
+  .section{margin-bottom:18px}
+  .section-title{font-size:15px;margin-bottom:10px}
+  .card{min-height:118px;padding:14px 13px}
+  .card-label{font-size:12px;line-height:1.35}
+  .card-value{font-size:30px;line-height:1.02}
+  .card-value.sm{font-size:25px;line-height:1.08}
+  .card-sub{font-size:12px;line-height:1.45}
+  .g4,.g3,.g2,.g5{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .yield-row{display:grid;grid-template-columns:34px 1fr;gap:4px 8px}
+  .yield-val{font-size:20px;min-width:0}
+  .yield-bar-bg{grid-column:1/-1}
+  .risk-row{grid-template-columns:10px 1fr;align-items:start}
+  .risk-meta{grid-column:2;text-align:left;white-space:normal}
+  .rank-item,.metric-row{align-items:flex-start;flex-direction:column}
+  .rank-item strong,.metric-row strong{text-align:left}
+  .rotation-item{grid-template-columns:1fr;gap:7px}
+  .rotation-val{text-align:left}
+  .panel-split,.band-grid,.check-grid{grid-template-columns:1fr}
+  .scard{grid-template-columns:1fr;gap:7px;padding:12px}
+  .scard-price,.scard-chg,.scard-dd{text-align:left}
+  .scard > div:nth-child(4) > div{justify-content:flex-start!important}
+  .scard-actions{justify-content:flex-start}
+  .chart-modal-head{flex-direction:column}
+  .chart-modal-price,.chart-modal-sub{text-align:left;justify-content:flex-start}
+  .chart-modal .chart-svg{height:240px}
+}
+@media(max-width:430px){
+  .g4,.g3,.g2,.g5{grid-template-columns:1fr}
+  .card{min-height:0}
+  .hdr-right .btn{font-size:11px;padding:0 7px}
+}
 </style>
 </head>
 <body>
@@ -765,6 +826,7 @@ input:focus,select:focus{border-color:#9db7de;box-shadow:0 0 0 3px rgba(35,95,19
 
 <script>
 const CAPTURE_LIB='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+const CAPTURE_LIBS=[CAPTURE_LIB,'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'];
 const STORAGE_KEY='mkt_custom_v1';
 const REFRESH_MS=5*60*1000;
 const SYM={sp:'^GSPC',nasdaq:'^IXIC',kospi:'^KS11',kosdaq:'^KQ11',vix:'^VIX',y10:'^TNX',y5:'^FVX',y2:'^IRX',usdkrw:'KRW=X',dxy:'DX-Y.NYB',usdjpy:'JPY=X',wti:'CL=F',gold:'GC=F',btc:'BTC-USD',hyg:'HYG',move:'^MOVE'};
@@ -1499,9 +1561,72 @@ function maybeAutoSnapshot(){const key=autoSnapshotKey();if(!key||settings.lastA
 function trendCell(s,prev,key,dec=0,prefix='',suffix=''){const v=s[key],pv=prev?.[key];if(v==null)return '—';const delta=pv!=null?v-pv:null,cls=delta==null?'ch-b':delta>=0?'ch-r':'ch-b',text=prefix+fmt(v,dec)+suffix;return delta==null?text:`${text}<br><span class="chip ${cls}" style="margin-top:3px">${delta>=0?'+':''}${fmt(delta,dec)}${suffix}</span>`}
 function renderHistory(){document.getElementById('histBody').innerHTML=snapshots.map((s,i)=>{const prev=snapshots[i+1];return `<tr><td>${s.ts}${s.mode==='auto'?'<br><span class="chip ch-g">자동</span>':''}</td><td>${trendCell(s,prev,'sp')}</td><td>${trendCell(s,prev,'nasdaq')}</td><td>${trendCell(s,prev,'kospi')}</td><td>${trendCell(s,prev,'vix',1)}</td><td>${trendCell(s,prev,'y10',2,'','%')}</td><td>${trendCell(s,prev,'gold',0,'$')}</td><td>${trendCell(s,prev,'btc',0,'$')}</td><td>${s.fg!=null?`<span class="chip ${fgStatus(s.fg).chip}">${s.fg}</span>`:'—'}</td></tr>`}).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:20px;text-align:center">매일 새벽 5시 이후 첫 갱신 때 하루 1번 자동 저장됩니다</td></tr>'}
 function clearHistory(){if(confirm('기록을 모두 삭제하시겠습니까?')){snapshots=[];save();renderHistory()}}
-function loadCaptureLib(){return new Promise((resolve,reject)=>{if(window.html2canvas)return resolve(window.html2canvas);const s=document.createElement('script');s.src=CAPTURE_LIB;s.onload=()=>resolve(window.html2canvas);s.onerror=reject;document.head.appendChild(s)})}
-async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();if(document.fonts?.ready)await document.fonts.ready;const old={height:target.style.height,overflow:target.style.overflow,display:target.style.display};target.style.height='auto';target.style.overflow='visible';target.style.display='block';await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const rect=target.getBoundingClientRect(),width=Math.ceil(Math.max(target.scrollWidth,rect.width)),height=Math.ceil(Math.max(target.scrollHeight,rect.height));const canvas=await html2canvas(target,{backgroundColor:'#f3f6fb',scale:2,useCORS:true,scrollX:0,scrollY:0,x:0,y:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),onclone:doc=>{const el=doc.getElementById('dashboardCapture');if(el){el.style.width=width+'px';el.style.minHeight=height+'px';el.style.height='auto';el.style.overflow='visible';el.style.display='block';}}});target.style.height=old.height;target.style.overflow=old.overflow;target.style.display=old.display;const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
-async function captureChartModal(){const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');try{setStatus('load','종목 캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:target.scrollWidth,windowHeight:target.scrollHeight});const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim();const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob)throw new Error('blob failed');const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','종목 캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','종목 캡쳐 생성 완료')},'image/png')}catch(e){setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
+function loadCaptureLib(){
+ if(window.html2canvas)return Promise.resolve(window.html2canvas);
+ if(window.__captureLibPromise)return window.__captureLibPromise;
+ window.__captureLibPromise=(async()=>{
+  let lastError=null;
+  for(const src of CAPTURE_LIBS){
+   try{
+    await new Promise((resolve,reject)=>{
+     const s=document.createElement('script'),timer=setTimeout(()=>{s.remove();reject(new Error('capture lib timeout'))},7000);
+     s.src=src;s.async=true;
+     s.onload=()=>{clearTimeout(timer);window.html2canvas?resolve():reject(new Error('capture lib missing'))};
+     s.onerror=()=>{clearTimeout(timer);s.remove();reject(new Error('capture lib failed'))};
+     document.head.appendChild(s);
+    });
+    if(window.html2canvas)return window.html2canvas;
+   }catch(e){lastError=e}
+  }
+  throw lastError||new Error('capture lib unavailable');
+ })();
+ return window.__captureLibPromise;
+}
+function canvasToBlob(canvas){return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('blob failed')),'image/png'))}
+function ensureCapturePreview(){
+ let el=document.getElementById('capturePreview');
+ if(el)return el;
+ el=document.createElement('div');
+ el.id='capturePreview';
+ el.className='capture-preview';
+ el.innerHTML=`<div class="capture-preview-card"><div class="capture-preview-head"><div class="capture-preview-title">캡쳐 이미지</div><button class="btn" onclick="closeCapturePreview()">닫기</button></div><img id="capturePreviewImg" alt="캡쳐 미리보기"><div class="mini-note" style="margin-top:8px">휴대폰에서는 아래 버튼으로 공유하거나 이미지를 길게 눌러 저장할 수 있습니다.</div><div class="capture-preview-actions"><button class="btn btn-green" id="captureShareBtn">공유/저장</button><a class="btn" id="captureDownloadBtn" download>다운로드</a></div></div>`;
+ document.body.appendChild(el);
+ return el;
+}
+function closeCapturePreview(){document.getElementById('capturePreview')?.classList.remove('open')}
+async function finishCapture(canvas,name,title){
+ const blob=await canvasToBlob(canvas),file=new File([blob],name,{type:'image/png'}),url=URL.createObjectURL(blob),preview=ensureCapturePreview();
+ const img=preview.querySelector('#capturePreviewImg'),share=preview.querySelector('#captureShareBtn'),down=preview.querySelector('#captureDownloadBtn');
+ img.src=url;down.href=url;down.download=name;
+ share.onclick=async()=>{if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}down.click();setStatus('ok','캡쳐 다운로드 시작')};
+ preview.classList.add('open');
+ if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}
+ setStatus('ok','캡쳐 미리보기 생성 완료');
+}
+async function captureElement(target,name,title,bg='#f7f9fc'){
+ const html2canvas=await loadCaptureLib();
+ if(document.fonts?.ready)await document.fonts.ready;
+ const old={height:target.style.height,overflow:target.style.overflow,display:target.style.display,width:target.style.width};
+ try{
+  target.style.height='auto';target.style.overflow='visible';target.style.display='block';
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const rect=target.getBoundingClientRect(),width=Math.ceil(Math.max(target.scrollWidth,rect.width)),height=Math.ceil(Math.max(target.scrollHeight,rect.height));
+  const canvas=await html2canvas(target,{backgroundColor:bg,scale:Math.min(2,window.devicePixelRatio||2),useCORS:true,allowTaint:true,logging:false,scrollX:0,scrollY:0,x:0,y:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),onclone:doc=>{const el=doc.getElementById(target.id);if(el){el.style.width=width+'px';el.style.minHeight=height+'px';el.style.height='auto';el.style.overflow='visible';el.style.display='block';el.querySelectorAll('button,.scard-actions,.sector-actions,.toolbar,.search-results').forEach(x=>x.style.display='none');}}});
+  await finishCapture(canvas,name,title);
+ }finally{
+  target.style.height=old.height;target.style.overflow=old.overflow;target.style.display=old.display;target.style.width=old.width;
+ }
+}
+async function captureDashboard(){
+ const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');
+ const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;
+ try{setStatus('load','캡쳐 생성 중...');await captureElement(target,name,'시장 대시보드','#f7f9fc')}catch(e){console.error(e);setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 새로고침 후 다시 시도해 주세요.')};
+}
+async function captureChartModal(){
+ const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');
+ const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim(),d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;
+ try{setStatus('load','종목 캡쳐 생성 중...');await captureElement(target,name,title||'종목 차트','#ffffff')}catch(e){console.error(e);setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 새로고침 후 다시 시도해 주세요.')};
+}
 function buildManualFields(){document.getElementById('manualFields').innerHTML=MANUAL_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" id="m_${k}" step="0.01" placeholder="현재값"></div>`).join('')}
 function buildThresholdFields(){document.getElementById('thresholdFields').innerHTML=THRESHOLD_FIELDS.map(([k,l,u])=>`<div class="field"><label>${l}${u?` (${u})`:''}</label><input type="number" id="r_${k}" step="0.01" placeholder="${DEFAULT_REFS[k]??''}"></div>`).join('')}
 function closeModal(){document.getElementById('editModal').classList.remove('open')}
