@@ -580,6 +580,24 @@ function renderHighList(){
  const body=groups.map(g=>{const items=rows.filter(x=>x.group===g);if(!items.length)return '';return `${g}\n${items.map(x=>`${x.name} (${x.note})${x.gap>=0?' 🚀':''}`).join('\n')}`}).filter(Boolean).join(`\n${sep}\n`);
  box.innerHTML=`<div class="high-report"><div class="high-report-title">🔥 주요 신고가 현황, ${date}</div><div class="high-report-date">*52주 신고가 포함 · 신고가권은 🚀 표시</div>${sep}\n${body}\n${sep}</div>`;
 }
+function highUniverse(){
+ const rows=[];
+ LEADER_ETFS.forEach(x=>rows.push({ticker:x.ticker,name:x.ticker,note:x.name,group:'🌏 ETF'}));
+ HIGH_WATCH.forEach(x=>rows.push(x));
+ sectors().forEach(sec=>(sec.stocks||[]).forEach(st=>rows.push({ticker:st.ticker,name:st.ticker,note:st.name||st.note||'',group:sec.name||'관심종목'})));
+ return rows.filter((x,i,a)=>a.findIndex(y=>normalizeSymbol(y.ticker)===normalizeSymbol(x.ticker))===i);
+}
+function highWatchRows(){
+ return highUniverse().map(x=>{const d=live[x.ticker]||live[normalizeSymbol(x.ticker)],p=d?.price??null,high=d?.high52w??getHistoryHigh(x.ticker),gap=p&&high?(p/high-1)*100:null,near=nearHighLabel(p,high),currency=d?.currency||(/[.](KS|KQ)$/i.test(x.ticker)?'KRW':'USD');return {...x,p,high,gap,near,currency}}).filter(x=>x.gap!=null&&x.gap>=-1.2).sort((a,b)=>b.gap-a.gap);
+}
+function renderHighList(){
+ const box=document.getElementById('high-list-card');if(!box)return;
+ const rows=highWatchRows(),today=new Date(),date=`${today.getMonth()+1}/${today.getDate()}`,sep='─────────────';
+ if(!rows.length){box.innerHTML='<div class="high-report"><div class="high-report-title">🔥 주요 신고가 현황</div><div class="high-report-date">실제 데이터 기준 · 52주 고점 -1.2% 이내</div>현재 불러온 관심종목/ETF 중 신고가권 종목이 없습니다.</div>';return}
+ const groups=[...new Set(rows.map(x=>x.group))];
+ const body=groups.map(g=>{const items=rows.filter(x=>x.group===g);return `${g}\n${items.map(x=>`${x.name} (${x.note}) · ${x.gap>=0?'🚀 신고가':'🚀 고점 '+x.gap.toFixed(1)+'%'} · ${fmtStockPrice(x.p,x.currency)}`).join('\n')}`}).join(`\n${sep}\n`);
+ box.innerHTML=`<div class="high-report"><div class="high-report-title">🔥 주요 신고가 현황, ${date}</div><div class="high-report-date">실제 데이터 기준 · 52주 신고가 포함 · 관심종목/주도 ETF 자동 스캔</div>${sep}\n${body}\n${sep}</div>`;
+}
 function renderKorea(){const el=document.getElementById('korea-indices');if(!el)return;el.innerHTML=''}
 function renderYield(){const y10=getPrice('y10'),y5=getPrice('y5'),y2=getPrice('y2'),spread=y10!=null&&y2!=null?y10-y2:null,inv=spread!=null&&spread<0;const row=(term,val)=>{if(val==null)return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:var(--muted)">—</div><div class="yield-bar-bg"></div></div>`;const s=yieldStatus(val),pct=Math.min(100,val/6*100),col=s.cls==='c-danger'?'var(--red)':s.cls==='c-warn'?'var(--yellow)':'var(--blue)';return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:${col}">${val.toFixed(2)}%</div><div style="flex:1"><div class="yield-bar-bg"><div class="yield-bar-fill" style="width:${pct}%;background:${col}"></div></div></div><span class="chip ${s.chip}">${s.label}</span></div>`};document.getElementById('yield-card').innerHTML=`<div class="card-label">수익률 곡선 ${spread!=null?`<span class="chip ${inv?'ch-r':'ch-g'}">${inv?'역전':'정상'} ${spread>0?'+':''}${spread.toFixed(2)}%</span>`:''}</div>${row('10Y',y10)}${row('5Y',y5)}${row('2Y',y2)}${y10!=null?tbar(y10,0,6,[{v:3,label:'3%'},{v:4,label:'4%'},{v:4.5,label:'4.5%'}],yieldStatus):''}`}
 function renderSentiment(){const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg):{label:'불러오는 중',color:'var(--muted)',chip:'ch-b'};document.getElementById('fg-val').textContent=fg!=null?Math.round(fg):'—';document.getElementById('fg-val').style.color=fgs.color;document.getElementById('fg-lbl').textContent='';if(fg!=null){const arc=204,fill=fg/100*arc;document.getElementById('gFill').setAttribute('stroke-dasharray',`${fill} ${arc-fill}`);document.getElementById('gNeedle').setAttribute('transform',`rotate(${-90+fg/100*180},80,80)`)}const vix=getPrice('vix'),vs=vix!=null?vixStatus(vix):{chip:'ch-b',label:'—'};document.getElementById('vix-row').innerHTML=`<div class="card-sub" style="justify-content:center;margin-bottom:10px"><span class="chip ${fgs.chip}">${fgs.label}</span>${fg!=null&&fg<10?'<span>분할매수 후보 구간</span>':''}</div><div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">VIX</span><span style="font-size:24px;font-weight:900">${vix!=null?fmt(vix,1):'—'}</span><span class="chip ${vs.chip}">${vs.label}</span></div>${vix!=null?tbar(vix,0,50,[{v:15,label:'안정'},{v:20,label:'주의'},{v:30,label:'위험'}],vixStatus):''}${fg!=null&&fg<10?'<div class="card-sub" style="margin-top:16px"><span class="chip ch-r">한자리수 공포</span><span>분할매수 후보 구간</span></div>':''}`}

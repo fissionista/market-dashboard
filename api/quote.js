@@ -52,6 +52,51 @@ async function fetchChart(symbol) {
   };
 }
 
+function raw(v) {
+  return v && typeof v === 'object' && 'raw' in v ? v.raw : v;
+}
+
+async function fetchFundamentals(symbol) {
+  const modules = 'summaryDetail,defaultKeyStatistics,financialData';
+  const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: 'application/json,text/plain,*/*',
+      'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
+    },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const r = data?.quoteSummary?.result?.[0];
+  if (!r) return null;
+  return {
+    trailingPE: raw(r.summaryDetail?.trailingPE) ?? raw(r.defaultKeyStatistics?.trailingPE) ?? null,
+    forwardPE: raw(r.summaryDetail?.forwardPE) ?? raw(r.defaultKeyStatistics?.forwardPE) ?? null,
+    priceToSalesTrailing12Months: raw(r.summaryDetail?.priceToSalesTrailing12Months) ?? raw(r.defaultKeyStatistics?.priceToSalesTrailing12Months) ?? null,
+    trailingEps: raw(r.defaultKeyStatistics?.trailingEps) ?? null,
+    forwardEps: raw(r.defaultKeyStatistics?.forwardEps) ?? null,
+    earningsQuarterlyGrowth: raw(r.defaultKeyStatistics?.earningsQuarterlyGrowth) ?? null,
+    revenueGrowth: raw(r.financialData?.revenueGrowth) ?? null,
+  };
+}
+
+async function enrichFundamentals(rows) {
+  const targets = rows
+    .filter((r) => r?.symbol && r.regularMarketPrice != null && r.trailingPE == null && r.forwardPE == null)
+    .slice(0, 30);
+  for (let i = 0; i < targets.length; i += 6) {
+    const settled = await Promise.allSettled(targets.slice(i, i + 6).map((r) => fetchFundamentals(r.symbol)));
+    settled.forEach((s, idx) => {
+      if (s.status !== 'fulfilled' || !s.value) return;
+      const row = targets[i + idx];
+      Object.entries(s.value).forEach(([k, v]) => {
+        if (row[k] == null && v != null) row[k] = v;
+      });
+    });
+  }
+  return rows;
+}
+
 async function fetchFallback(symbols) {
   const rows = [];
   for (let i = 0; i < symbols.length; i += 8) {
@@ -84,13 +129,15 @@ export default async function handler(req, res) {
     const data = await fetchYahoo(symbols);
     const rows = data?.quoteResponse?.result || [];
     if (rows.length) {
-      res.status(200).json({ quoteResponse: { result: rows.map(normalizeQuote) } });
+      res.status(200).json({ quoteResponse: { result: await enrichFundamentals(rows.map(normalizeQuote)) } });
       return;
     }
   } catch {}
 
   try {
-    res.status(200).json(await fetchFallback(symbols));
+    const fallback = await fetchFallback(symbols);
+    const rows = fallback?.quoteResponse?.result || [];
+    res.status(200).json({ quoteResponse: { result: await enrichFundamentals(rows.map(normalizeQuote)) } });
   } catch (error) {
     res.status(502).json({ error: String(error?.message || error) });
   }
