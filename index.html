@@ -158,6 +158,49 @@ input,select{background:#0b121a;border-color:rgba(255,255,255,.12);color:#f4f7fb
 @media(max-width:600px){
   main{padding:10px}.alert-list{padding:8px 10px 0}.card{min-height:132px;padding:12px}.card-value{font-size:24px}.card-value.sm{font-size:21px}.tabs{margin-bottom:12px}.tab{padding:8px 10px;font-size:12px}
 }
+
+/* Bright editorial dashboard refinement */
+:root{
+  --bg:#f5f7fb;--surface:#ffffff;--surface2:#f8fafc;--border:#d9e2ee;
+  --text:#111827;--muted:#64748b;--green:#009b68;--green-dim:rgba(0,155,104,.11);
+  --red:#e23b53;--red-dim:rgba(226,59,83,.11);--yellow:#c98700;--yellow-dim:rgba(201,135,0,.13);
+  --blue:#1867d8;--blue-dim:rgba(24,103,216,.11);--orange:#dd6b20;--orange-dim:rgba(221,107,32,.12);
+  --purple:#7056d9;--purple-dim:rgba(112,86,217,.12);--mint:#00a4b8;
+}
+body{
+  background:
+    linear-gradient(135deg,rgba(24,103,216,.08),transparent 28%),
+    linear-gradient(225deg,rgba(0,164,184,.08),transparent 30%),
+    linear-gradient(180deg,#fbfdff 0%,#f1f5f9 100%);
+  color:var(--text);
+}
+header{
+  background:rgba(255,255,255,.86);border-bottom:1px solid rgba(217,226,238,.92);
+  box-shadow:0 8px 24px rgba(15,23,42,.06);
+}
+.logo{color:#101828}.logo span{color:var(--blue)}
+.btn{background:#fff;border-color:#d7e1ee;color:#1f2937;box-shadow:0 4px 12px rgba(15,23,42,.05)}
+.btn:hover{background:#f8fafc;border-color:#b9c7d8}.btn-blue{background:#111827;color:#fff}.btn-green{background:#eefaf5;color:var(--green);border-color:rgba(0,155,104,.22)}
+main{max-width:1240px}.tabs{background:rgba(255,255,255,.82);border-color:#dbe3ef;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.tab{color:#64748b}.tab.active{background:#111827;color:#fff}
+.alert-item{background:#fffaf0;border-color:#f1d79a;color:#334155}.al-danger{background:#fff1f3;border-color:#f2b5bf}.al-safe,.al-buy{background:#effaf5;border-color:#a8e6cc}.al-info{background:#eef6ff;border-color:#bad8ff}
+.section-title{color:#475569}.section-title:before{background:linear-gradient(180deg,#1867d8,#00a4b8)}
+.card,.scard,.mini-card,.signal-item,.risk-check,.high-report,.chart-card,.chart-tile,.tv-panel,.toolbar,.tv-controls,.pick,.search-result,.axis-card,.check-card,.rank-item,.watch-table td{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);
+  border-color:#d9e2ee;color:var(--text);box-shadow:0 10px 26px rgba(15,23,42,.055);
+}
+.card{border-radius:10px;min-height:142px}.card:hover,.scard:hover{border-color:#9cc0ef;box-shadow:0 12px 28px rgba(24,103,216,.09)}
+.card::before,.scard::before{height:3px;background:linear-gradient(90deg,var(--ca,rgba(24,103,216,.45)),rgba(255,255,255,.35))}
+.card-label,.mini-title,.risk-title,.chart-name,.sector-name,.axis-value,.check-title,.watch-symbol{color:#111827}
+.card-label{color:#42526a}.card-value,.card-value.sm,.mini-value,.chart-now,.watch-price,.chart-modal-price{color:#101828}
+.card-sub,.mini-note,.axis-note,.signal-note,.watch-sub,.high-report-date{color:var(--muted)}
+.chip{border:0;background:var(--blue-dim)}.ch-g{background:var(--green-dim);color:var(--green)}.ch-r{background:var(--red-dim);color:var(--red)}.ch-b{background:var(--blue-dim);color:var(--blue)}.ch-y{background:var(--yellow-dim);color:var(--yellow)}.ch-p{background:var(--purple-dim);color:var(--purple)}.ch-o{background:var(--orange-dim);color:var(--orange)}
+.yield-row,.mini-row,.risk-head,.watch-table th,.hist-table th,.hist-table td,.scard-divider{border-color:#e5edf6}
+.yield-bar-bg,.tbar,.dd-bar{background:#e7eef7}
+input,select{background:#fff;border-color:#d4dfec;color:#111827}
+.modal{background:#fff;border-color:#d7e1ee;box-shadow:0 30px 80px rgba(15,23,42,.20)}.modal-overlay{background:rgba(15,23,42,.45)}
+.chart-svg text{fill:#8b98a8}.fg-mood,.gauge-val{color:#101828}
+#dashboardCapture{background:linear-gradient(180deg,#fbfdff 0%,#f1f5f9 100%);padding:2px;border-radius:14px}
 </style>
 </head>
 <body>
@@ -185,7 +228,6 @@ input,select{background:#0b121a;border-color:rgba(255,255,255,.12);color:#f4f7fb
   <div class="tab-content active" id="tab-dashboard">
     <div id="dashboardCapture">
       <div class="section"><div class="section-title">글로벌 지수</div><div class="grid g4" id="global-indices"></div></div>
-    </div>
       <div class="grid g2" style="margin-bottom:24px;gap:16px">
         <div class="section" style="margin-bottom:0"><div class="section-title">금리 / 채권</div><div class="card" id="yield-card"></div></div>
         <div class="section" style="margin-bottom:0">
@@ -209,6 +251,7 @@ input,select{background:#0b121a;border-color:rgba(255,255,255,.12);color:#f4f7fb
       </div>
       <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
       <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
+    </div>
     <div class="section">
       <div class="section-title">선택 그래프</div>
       <div class="tv-controls">
@@ -1041,7 +1084,7 @@ function trendCell(s,prev,key,dec=0,prefix='',suffix=''){const v=s[key],pv=prev?
 function renderHistory(){document.getElementById('histBody').innerHTML=snapshots.map((s,i)=>{const prev=snapshots[i+1];return `<tr><td>${s.ts}${s.mode==='auto'?'<br><span class="chip ch-g">자동</span>':''}</td><td>${trendCell(s,prev,'sp')}</td><td>${trendCell(s,prev,'nasdaq')}</td><td>${trendCell(s,prev,'kospi')}</td><td>${trendCell(s,prev,'vix',1)}</td><td>${trendCell(s,prev,'y10',2,'','%')}</td><td>${trendCell(s,prev,'gold',0,'$')}</td><td>${trendCell(s,prev,'btc',0,'$')}</td><td>${s.fg!=null?`<span class="chip ${fgStatus(s.fg).chip}">${s.fg}</span>`:'—'}</td></tr>`}).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:20px;text-align:center">매일 새벽 5시 이후 첫 갱신 때 하루 1번 자동 저장됩니다</td></tr>'}
 function clearHistory(){if(confirm('기록을 모두 삭제하시겠습니까?')){snapshots=[];save();renderHistory()}}
 function loadCaptureLib(){return new Promise((resolve,reject)=>{if(window.html2canvas)return resolve(window.html2canvas);const s=document.createElement('script');s.src=CAPTURE_LIB;s.onload=()=>resolve(window.html2canvas);s.onerror=reject;document.head.appendChild(s)})}
-async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#05080d',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
+async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#f1f5f9',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 async function captureChartModal(){const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');try{setStatus('load','종목 캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:target.scrollWidth,windowHeight:target.scrollHeight});const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim();const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob)throw new Error('blob failed');const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','종목 캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','종목 캡쳐 생성 완료')},'image/png')}catch(e){setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 function buildManualFields(){document.getElementById('manualFields').innerHTML=MANUAL_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" id="m_${k}" step="0.01" placeholder="현재값"></div>`).join('')}
 function buildThresholdFields(){document.getElementById('thresholdFields').innerHTML=THRESHOLD_FIELDS.map(([k,l,u])=>`<div class="field"><label>${l}${u?` (${u})`:''}</label><input type="number" id="r_${k}" step="0.01" placeholder="${DEFAULT_REFS[k]??''}"></div>`).join('')}
