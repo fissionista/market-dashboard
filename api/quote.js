@@ -320,6 +320,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  const lite = String(req.query.lite || '') === '1';
   const raw = String(req.query.symbols || '');
   const symbols = raw
     .split(',')
@@ -336,7 +337,8 @@ export default async function handler(req, res) {
     const data = await fetchYahoo(symbols);
     const rows = data?.quoteResponse?.result || [];
     if (rows.length) {
-      const enriched = await enrichKoreanQuotes(await enrichFundamentals(rows.map(normalizeQuote)), symbols);
+      const normalized = rows.map(normalizeQuote);
+      const enriched = lite ? normalized : await enrichKoreanQuotes(await enrichFundamentals(normalized), symbols);
       res.status(200).json({ quoteResponse: { result: enriched } });
       return;
     }
@@ -345,7 +347,8 @@ export default async function handler(req, res) {
   try {
     const fallback = await fetchFallback(symbols);
     const rows = fallback?.quoteResponse?.result || [];
-    const enriched = await enrichKoreanQuotes(await enrichFundamentals(rows.map(normalizeQuote)), symbols);
+    const normalized = rows.map(normalizeQuote);
+    const enriched = lite ? normalized : await enrichKoreanQuotes(await enrichFundamentals(normalized), symbols);
     res.status(200).json({ quoteResponse: { result: enriched } });
   } catch (error) {
     res.status(502).json({ error: String(error?.message || error) });
