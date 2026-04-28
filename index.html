@@ -429,6 +429,17 @@ async function fetchAppApiBatch(symbols){
    return data?.quoteResponse?.result||[];
  }catch(e){return []}
 }
+function ingestQuoteRows(rows){
+ let count=0;
+ (rows||[]).forEach(q=>{
+   if(q.regularMarketPrice==null)return;
+   const keys=[q.symbol,normalizeSymbol(q.symbol)].filter(Boolean);
+   const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol,trailingPE:q.trailingPE??null,forwardPE:q.forwardPE??null,priceToSales:q.priceToSalesTrailing12Months??null,trailingEps:q.trailingEps??null,forwardEps:q.forwardEps??null,earningsGrowth:q.earningsQuarterlyGrowth??null,revenueGrowth:q.revenueGrowth??null};
+   keys.forEach(k=>live[k]=item);
+   count++;
+ });
+ return count;
+}
 async function fetchFearGreed(){
  if(location.protocol==='file:')return null;
  try{
@@ -567,6 +578,29 @@ async function fetchAll(manualTrigger){
  const chartSymbols=[...symbols,...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
  historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};applyHistoryHighs();
  activeFetch=false;setStatus(done?'ok':'err',done?`✓ ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신 (${done}/${symbols.length})`:'⚠ 갱신실패 — 수동입력 사용');maybeAutoSnapshot();scheduleRefresh();renderAll();
+}
+async function fetchAll(manualTrigger){
+ if(activeFetch&&!manualTrigger)return;
+ activeFetch=true;
+ const symbols=allSymbols();
+ let done=0;
+ setStatus('load',`연결 중... 0/${symbols.length}`);
+ await Promise.allSettled([fetchFearGreed(),fetchMarketExtras(),fetchHighYield()]);
+ for(let i=0;i<symbols.length;i+=24){
+  const batch=symbols.slice(i,i+24);
+  const rows=await fetchQuoteBatch(batch);
+  done+=ingestQuoteRows(rows);
+  setStatus('load',`연결 중... ${done}/${symbols.length}`);
+  renderAll();
+ }
+ const chartSymbols=[...symbols,...(settings.tvItems||DEFAULT_TV).filter(x=>x.on).map(x=>SYM[x.key]).filter(Boolean),'^VIX','^MOVE'];
+ historyData={...historyData,...await fetchHistoryBatch([...new Set(chartSymbols)])};
+ applyHistoryHighs();
+ activeFetch=false;
+ setStatus(done?'ok':'err',done?`갱신 ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} (${done}/${symbols.length})`:'갱신 실패');
+ maybeAutoSnapshot();
+ scheduleRefresh();
+ renderAll();
 }
 function scheduleRefresh(){if(timer)clearTimeout(timer);timer=setTimeout(()=>fetchAll(false),REFRESH_MS)}
 function normalizeSymbol(sym){return String(sym||'').toUpperCase().replace(/\.(KS|KQ)$/,'')}
@@ -1110,12 +1144,22 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);
  renderChartModal(label,symbol,price,chg,item?.currency||'USD');document.getElementById('chartModal').classList.add('open');
- if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};applyHistoryHighs();renderChartModal(label,symbol,price,chg,item?.currency||'USD')}
+ if(location.protocol!=='file:'){
+  const [quoteRows,data]=await Promise.all([fetchQuoteBatch([symbol]),fetchHistoryBatch([symbol])]);
+  ingestQuoteRows(quoteRows);historyData={...historyData,...data};applyHistoryHighs();
+  const next=getLive(key),nextPrice=getPrice(key),nextChg=getChangePct(key);
+  renderChartModal(label,symbol,nextPrice,nextChg,next?.currency||item?.currency||'USD');
+ }
 }
 async function openChartByTicker(ticker,label,country='US'){
  const symbol=ticker.toUpperCase(), item=live[symbol]||live[normalizeSymbol(symbol)]||{}, price=item.price??null, chg=item.changePct??null, currency=item.currency||(country==='KR'?'KRW':'USD');
  renderChartModal(label||symbol,symbol,price,chg,currency);document.getElementById('chartModal').classList.add('open');
- if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};applyHistoryHighs();renderChartModal(label||symbol,symbol,price,chg,currency)}
+ if(location.protocol!=='file:'){
+  const [quoteRows,data]=await Promise.all([fetchQuoteBatch([symbol]),fetchHistoryBatch([symbol])]);
+  ingestQuoteRows(quoteRows);historyData={...historyData,...data};applyHistoryHighs();
+  const next=live[symbol]||live[normalizeSymbol(symbol)]||{},nextPrice=next.price??price,nextChg=next.changePct??chg;
+  renderChartModal(label||symbol,symbol,nextPrice,nextChg,next.currency||currency);
+ }
 }
 function openModal(){MANUAL_FIELDS.forEach(([k])=>{const el=document.getElementById('m_'+k);if(el)el.value=manual[k]??''});const refMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(refMap).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=refs[k]??''});THRESHOLD_FIELDS.forEach(([k])=>{const el=document.getElementById('r_'+k);if(el)el.value=refs[k]??DEFAULT_REFS[k]??''});const provider=document.getElementById('set_provider'),alpha=document.getElementById('set_alpha');if(provider)provider.value=settings.provider||'auto';if(alpha)alpha.value=settings.alphaKey||'';document.getElementById('editModal').classList.add('open')}
 function saveModal(){const getV=id=>{const e=document.getElementById(id);return e&&e.value!==''?parseFloat(e.value):null};MANUAL_FIELDS.forEach(([k])=>{const v=getV('m_'+k);if(v!=null)manual[k]=v;else delete manual[k]});const rMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(rMap).forEach(([k,id])=>{const v=getV(id);if(v!=null)refs[k]=v});THRESHOLD_FIELDS.forEach(([k])=>{const v=getV('r_'+k);refs[k]=v!=null?v:DEFAULT_REFS[k]});settings.provider=document.getElementById('set_provider')?.value||'auto';settings.alphaKey=document.getElementById('set_alpha')?.value.trim()||'';save();closeModal();renderAll();fetchAll(true)}
