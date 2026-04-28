@@ -126,7 +126,9 @@ async function fetchNaverSummary(symbol) {
       earningsQuarterlyGrowth: finance.earningsGrowth,
       revenueGrowth: finance.revenueGrowth,
       operatingIncomeGrowth: finance.earningsGrowth,
+      revenuePrevious: finance.revenuePrevious,
       revenueLatest: finance.revenueLatest,
+      operatingIncomePrevious: finance.operatingIncomePrevious,
       operatingIncomeLatest: finance.operatingIncomeLatest,
       marketSum,
     };
@@ -168,7 +170,9 @@ async function fetchNaverFinance(code) {
   const empty = {
     revenueGrowth: null,
     earningsGrowth: null,
+    revenuePrevious: null,
     revenueLatest: null,
+    operatingIncomePrevious: null,
     operatingIncomeLatest: null,
   };
   try {
@@ -184,12 +188,16 @@ async function fetchNaverFinance(code) {
     const data = await res.json();
     const revenues = valuesByActualPeriod(data, '매출액');
     const profits = valuesByActualPeriod(data, '영업이익');
+    const revenuePrevious = revenues.at(-2)?.value ?? null;
     const revenueLatest = revenues.at(-1)?.value ?? null;
+    const operatingIncomePrevious = profits.at(-2)?.value ?? null;
     const operatingIncomeLatest = profits.at(-1)?.value ?? null;
     return {
       revenueGrowth: growthFrom(revenues),
       earningsGrowth: growthFrom(profits),
+      revenuePrevious,
       revenueLatest,
+      operatingIncomePrevious,
       operatingIncomeLatest,
     };
   } catch {
@@ -220,7 +228,7 @@ async function enrichKoreanQuotes(rows, symbols) {
       if (row) {
         Object.entries(s.value).forEach(([k, v]) => {
           if (v == null || v === '') return;
-          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenueLatest', 'operatingIncomeLatest', 'marketSum', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
+          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenuePrevious', 'revenueLatest', 'operatingIncomePrevious', 'operatingIncomeLatest', 'marketSum', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
           else if (row[k] == null || row[k] === '') row[k] = v;
         });
         row.currency = 'KRW';

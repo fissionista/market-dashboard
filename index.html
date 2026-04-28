@@ -289,6 +289,20 @@ main{max-width:1320px;padding:18px 22px 36px}
 .modal{border-radius:18px}.chart-modal{max-width:860px}.chart-modal-title{font-size:22px}.chart-modal-price{font-size:34px}.chart-modal-sub{font-size:14px}.chart-modal .chart-svg{height:310px}
 #dashboardCapture{background:#f3f6fb;padding:0 0 4px}
 #tab-dashboard>.section:not(#dashboardCapture .section){margin-top:6px}
+.metric-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:13px}
+.metric-row:first-child{border-top:0}
+.metric-row strong{font-family:'JetBrains Mono','Pretendard',monospace;font-size:15px;color:var(--text)}
+.rotation-board{grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px}
+.rotation-list{display:grid;gap:7px}
+.rotation-item{display:grid;grid-template-columns:1.2fr .7fr .7fr .7fr auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:#fbfdff;cursor:pointer}
+.rotation-name{font-weight:900;color:var(--text)}
+.rotation-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.rotation-val{font-family:'JetBrains Mono','Pretendard',monospace;font-weight:800;text-align:right}
+.panel-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.band-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.band-cell{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:11px}
+.band-label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:5px}
+.band-value{font-family:'JetBrains Mono','Pretendard',monospace;font-size:17px;font-weight:900;color:var(--text)}
 @media(max-width:900px){
   main{padding:14px}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:1fr}
   .card{min-height:152px;padding:18px}.card-value{font-size:34px}.card-value.sm{font-size:29px}.gauge-arc{width:180px;height:96px}
@@ -300,6 +314,7 @@ main{max-width:1320px;padding:18px 22px 36px}
   .card{min-height:138px;padding:15px;border-radius:14px}.card-label{font-size:13px;margin-bottom:10px}.card-value{font-size:29px}.card-value.sm{font-size:25px}.card-sub{font-size:12px}.chip{font-size:11px;padding:4px 8px}
   .yield-val{font-size:19px}.gauge-arc{width:150px;height:82px}.gauge-val{font-size:28px}
   .scard{grid-template-columns:1fr;align-items:start}.scard-price,.scard-chg,.scard-dd{text-align:left}.scard-actions{justify-content:flex-start}
+  .rotation-item{grid-template-columns:1fr 1fr}.rotation-item .chip{justify-self:start}.band-grid,.panel-split{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -636,7 +651,7 @@ function ingestQuoteRows(rows){
  (rows||[]).forEach(q=>{
    if(q.regularMarketPrice==null)return;
    const keys=[q.symbol,normalizeSymbol(q.symbol)].filter(Boolean);
-   const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol,trailingPE:q.trailingPE??null,forwardPE:q.forwardPE??null,priceToSales:q.priceToSalesTrailing12Months??null,priceToBook:q.priceToBook??null,trailingEps:q.trailingEps??null,forwardEps:q.forwardEps??null,earningsGrowth:q.earningsQuarterlyGrowth??q.operatingIncomeGrowth??null,revenueGrowth:q.revenueGrowth??null,revenueLatest:q.revenueLatest??null,operatingIncomeLatest:q.operatingIncomeLatest??null};
+   const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol,trailingPE:q.trailingPE??null,forwardPE:q.forwardPE??null,priceToSales:q.priceToSalesTrailing12Months??null,priceToBook:q.priceToBook??null,trailingEps:q.trailingEps??null,forwardEps:q.forwardEps??null,earningsGrowth:q.earningsQuarterlyGrowth??q.operatingIncomeGrowth??null,revenueGrowth:q.revenueGrowth??null,revenuePrevious:q.revenuePrevious??null,revenueLatest:q.revenueLatest??null,operatingIncomePrevious:q.operatingIncomePrevious??null,operatingIncomeLatest:q.operatingIncomeLatest??null};
    keys.forEach(k=>live[k]=item);
    count++;
  });
@@ -1463,6 +1478,99 @@ async function openChartByTicker(ticker,label,country='US'){
  }
 }
 function renderStockCard(stock,sectorId){const t=stock.ticker.toUpperCase().trim(),d=live[t]||live[normalizeSymbol(t)],price=d?.price??null,high=d?.high52w??null,chg=d?.changePct??null,currency=d?.currency??(stock.country==='KR'?'KRW':'USD'),dd=drawdown(price,high),dds=ddStyle(dd),tech=technicalProfile(t,price),pe=d?.forwardPE||d?.trailingPE;return `<div class="scard clickable" onclick="openChartByTicker('${jsArg(t)}','${jsArg(stock.name||t)}','${jsArg(stock.country||'US')}')"><div><div class="scard-name">${stock.name||t}</div><div class="scard-ticker">${t}${stock.note?` · <span class="scard-note">${stock.note}</span>`:''}</div></div><div class="scard-price">${fmtStockPrice(price,currency)}</div><div class="scard-chg" style="color:${chg!=null?(chg>=0?'var(--red)':'var(--blue)'):'var(--muted)'}">${chg!=null?fmtPct(chg):'—'}</div><div><div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap"><span class="scard-dd ${dds.cls}">${dd!=null?'고점 '+dd.toFixed(1)+'%':'고점 —'}</span><span class="chip ${tech.chip}">${tech.label}</span>${pe?`<span class="chip ch-b">PER ${fmt(pe,1)}</span>`:''}</div></div><div class="scard-actions"><button class="btn mini-btn" onclick="event.stopPropagation();moveStock('${sectorId}','${t}',-1)">←</button><button class="btn mini-btn" onclick="event.stopPropagation();moveStock('${sectorId}','${t}',1)">→</button><button class="btn btn-danger mini-btn" onclick="event.stopPropagation();removeStock('${sectorId}','${t}')">삭제</button></div></div>`}
+function emaValues(values,n){
+ const out=[];let ema=null,k=2/(n+1);
+ values.forEach((v,i)=>{if(!Number.isFinite(v)){out.push(null);return} if(ema==null){const seed=values.slice(Math.max(0,i-n+1),i+1).filter(Number.isFinite);ema=seed.length>=n?avgNums(seed):v}else ema=v*k+ema*(1-k);out.push(ema)});
+ return out;
+}
+function macdProfile(points){
+ const rows=(points||[]).filter(p=>Number.isFinite(p.close)),vals=rows.map(p=>p.close);
+ if(vals.length<35)return {label:'MACD 대기',chip:'ch-b',note:'35일 이상 가격 데이터 필요'};
+ const e12=emaValues(vals,12),e26=emaValues(vals,26),macd=vals.map((_,i)=>Number.isFinite(e12[i])&&Number.isFinite(e26[i])?e12[i]-e26[i]:null),signal=emaValues(macd.filter(Number.isFinite),9);
+ const valid=macd.map((m,i)=>({m,i})).filter(x=>Number.isFinite(x.m)); if(valid.length<10)return {label:'MACD 대기',chip:'ch-b',note:'신호선 계산 대기'};
+ const lastIdx=valid.at(-1).i,prevIdx=valid.at(-2).i,signalLast=signal.at(-1),signalPrev=signal.at(-2),mLast=macd[lastIdx],mPrev=macd[prevIdx],hist=mLast-signalLast,prevHist=mPrev-signalPrev;
+ if(prevHist<=0&&hist>0)return {label:'MACD 상향 돌파',chip:'ch-g',note:'추세 회복 시도. 거래량과 50일선 회복을 같이 확인'};
+ if(prevHist>=0&&hist<0)return {label:'MACD 하향 돌파',chip:'ch-r',note:'모멘텀 약화. 추격매수보다 리스크 축소 확인'};
+ if(hist>0&&mLast>0)return {label:'상승 모멘텀',chip:'ch-g',note:'MACD가 0선 위에서 신호선 상단'};
+ if(hist>0)return {label:'회복 시도',chip:'ch-b',note:'MACD는 개선 중이나 0선 회복은 추가 확인'};
+ return {label:'모멘텀 약함',chip:'ch-y',note:'MACD가 신호선 아래. 반등 신뢰도 낮음'};
+}
+function maAlignmentProfile(symbol,price=null){
+ const rows=chartDataFor(symbol).filter(p=>Number.isFinite(p.close)),last=price??lastPoint(rows)?.close,ma20=movingAverage(rows,20),ma50=movingAverage(rows,50),ma200=movingAverage(rows,200),ma200Prev=movingAverage(rows.slice(0,-20),200);
+ if(last==null||ma20==null||ma50==null)return {label:'이평 대기',chip:'ch-b',note:'20/50일선 데이터 필요',score:0,ma20,ma50,ma200};
+ const rising200=ma200!=null&&ma200Prev!=null?ma200>ma200Prev:null;
+ if(ma200!=null&&last>ma20&&ma20>ma50&&ma50>ma200&&rising200!==false)return {label:'정배열',chip:'ch-g',note:'20>50>200 상승 추세. 눌림목 관찰 구간',score:4,ma20,ma50,ma200};
+ if(ma200!=null&&last<ma20&&ma20<ma50&&ma50<ma200)return {label:'역배열',chip:'ch-r',note:'하락 추세. 신규 매수보다 회복 확인 우선',score:0,ma20,ma50,ma200};
+ if(ma200!=null&&last>ma50&&ma50>ma200)return {label:'상승 혼재',chip:'ch-b',note:'큰 추세는 양호하나 단기 정렬 확인 필요',score:3,ma20,ma50,ma200};
+ if(last>ma20&&last>ma50)return {label:'단기 회복',chip:'ch-y',note:'단기 반등. 200일선/정배열 전환 확인',score:2,ma20,ma50,ma200};
+ return {label:'혼재',chip:'ch-y',note:'방향 확인 전까지 관망 또는 소액 분할',score:1,ma20,ma50,ma200};
+}
+function volumeSignalProfile(symbol){
+ const rows=chartDataFor(symbol).filter(p=>Number.isFinite(p.close)),vr=volumeRatio(rows),last=rows.at(-1),prev=rows.at(-2),up=last&&prev?last.close>prev.close:null;
+ if(vr==null)return {label:'거래량 대기',chip:'ch-b',note:'거래량 데이터 필요',vr:null};
+ if(vr>=3&&up)return {label:'강한 매수 흔적',chip:'ch-g',note:`20일 평균 대비 ${fmt(vr,1)}배. 가격 상승 동반`,vr};
+ if(vr>=3&&!up)return {label:'매도 압력 주의',chip:'ch-r',note:`거래량 ${fmt(vr,1)}배인데 가격 약세`,vr};
+ if(vr>=2)return {label:'거래량 강함',chip:up?'ch-g':'ch-y',note:`20일 평균 대비 ${fmt(vr,1)}배`,vr};
+ if(vr>=1.5)return {label:'관심 거래량',chip:'ch-b',note:`20일 평균 대비 ${fmt(vr,1)}배`,vr};
+ return {label:'보통 거래량',chip:'ch-b',note:`20일 평균 대비 ${fmt(vr,1)}배`,vr};
+}
+function atrPlanProfile(symbol,price=null,currency='USD'){
+ const rows=chartDataFor(symbol).filter(p=>Number.isFinite(p.close)),last=price??lastPoint(rows)?.close,atr=atrValue(rows,14);
+ if(last==null||atr==null)return {label:'ATR 대기',chip:'ch-b',note:'OHLC 14일 이상 필요',atr:null};
+ const stop1=last-atr*2,stop2=last-atr*3,target1=last+atr*3,target2=last+atr*6,riskPct=atr*2/last*100;
+ return {label:riskPct>12?'변동성 큼':riskPct>7?'변동성 중간':'변동성 안정',chip:riskPct>12?'ch-r':riskPct>7?'ch-y':'ch-g',note:`ATR 기준 1차 리스크 약 ${fmt(riskPct,1)}%`,atr,stop1,stop2,target1,target2,riskPct,currency};
+}
+function turnaroundProfile(item={}){
+ const opPrev=item.operatingIncomePrevious,opLast=item.operatingIncomeLatest;
+ const revPrev=item.revenuePrevious,revLast=item.revenueLatest;
+ const derivedOpGrowth=Number.isFinite(opPrev)&&Number.isFinite(opLast)&&opPrev!==0?(opLast-opPrev)/Math.abs(opPrev):null;
+ const derivedRevenueGrowth=Number.isFinite(revPrev)&&Number.isFinite(revLast)&&revPrev!==0?(revLast-revPrev)/Math.abs(revPrev):null;
+ const opGrowth=Number.isFinite(item.earningsGrowth)?item.earningsGrowth:derivedOpGrowth;
+ const revenueGrowth=Number.isFinite(item.revenueGrowth)?item.revenueGrowth:derivedRevenueGrowth;
+ if(Number.isFinite(opPrev)&&Number.isFinite(opLast)&&opPrev<0&&opLast>0)return {label:'영업익 턴어라운드',chip:'ch-g',note:`영업이익 ${fmt(opPrev,0)} → ${fmt(opLast,0)}`,opGrowth,revenueGrowth};
+ if(Number.isFinite(opGrowth)&&opGrowth>=0.3)return {label:'영업익 급개선',chip:'ch-g',note:`영업이익 성장률 ${fmtPct(opGrowth*100)}`,opGrowth,revenueGrowth};
+ if(Number.isFinite(opGrowth)&&opGrowth>0)return {label:'영업익 개선',chip:'ch-b',note:`영업이익 성장률 ${fmtPct(opGrowth*100)}`,opGrowth,revenueGrowth};
+ if(Number.isFinite(revenueGrowth)&&revenueGrowth>0.15)return {label:'매출 성장',chip:'ch-b',note:`매출 성장률 ${fmtPct(revenueGrowth*100)}`,opGrowth,revenueGrowth};
+ if(Number.isFinite(opGrowth)&&opGrowth<=-0.1)return {label:'이익 둔화',chip:'ch-r',note:`영업이익 성장률 ${fmtPct(opGrowth*100)}`,opGrowth,revenueGrowth};
+ return {label:'실적 미제공',chip:'ch-b',note:'공급처에서 영업이익/매출 값을 주지 않는 종목입니다.',opGrowth,revenueGrowth};
+}
+function formatPlanPrice(v,currency){return currency==='KRW'?fmtStockPrice(v,'KRW'):fmtStockPrice(v,currency||'USD')}
+function technicalUpgradePanel(symbol,price,currency='USD'){
+ const ma=maAlignmentProfile(symbol,price),vol=volumeSignalProfile(symbol),macd=macdProfile(chartDataFor(symbol)),atr=atrPlanProfile(symbol,price,currency);
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">기술 체크</div><span class="chip ${ma.chip}">${ma.label}</span></div><div class="panel-split"><div><div class="metric-row"><span>이동평균 정렬</span><strong>${ma.label}</strong></div><div class="metric-row"><span>거래량</span><strong>${vol.vr!=null?fmt(vol.vr,1)+'배':'—'}</strong></div><div class="metric-row"><span>MACD</span><strong>${macd.label}</strong></div></div><div><div class="mini-note">${ma.note}</div><div class="mini-note" style="margin-top:8px">${vol.note}</div><div class="mini-note" style="margin-top:8px">${macd.note}</div></div></div><div class="band-grid"><div class="band-cell"><div class="band-label">1차 손절</div><div class="band-value">${atr.stop1!=null?formatPlanPrice(atr.stop1,currency):'—'}</div></div><div class="band-cell"><div class="band-label">2차 손절</div><div class="band-value">${atr.stop2!=null?formatPlanPrice(atr.stop2,currency):'—'}</div></div><div class="band-cell"><div class="band-label">1차 목표</div><div class="band-value">${atr.target1!=null?formatPlanPrice(atr.target1,currency):'—'}</div></div><div class="band-cell"><div class="band-label">2차 목표</div><div class="band-value">${atr.target2!=null?formatPlanPrice(atr.target2,currency):'—'}</div></div></div><div class="mini-note" style="margin-top:9px">ATR 손절/목표가는 매수 추천이 아니라 진입 후 리스크 계획용입니다.</div></div>`;
+}
+function valuationPanelHtml(symbol,item={}){
+ const d=item||live[symbol]||live[normalizeSymbol(symbol)]||{},isKr=/^\d{6}(\.KS|\.KQ)?$/i.test(symbol)||d.currency==='KRW';
+ const pe=d.forwardPE??d.trailingPE??null,eps=d.forwardEps??d.trailingEps??null,pbr=d.priceToBook??null,ps=d.priceToSales??null,turn=turnaroundProfile(d);
+ const fourth=isKr?`<div class="check-card"><div class="check-title">PBR</div><div class="check-value">${pbr!=null?fmt(pbr,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">Naver 기준</div></div>`:`<div class="check-card"><div class="check-title">P/S</div><div class="check-value">${ps!=null?fmt(ps,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">Yahoo 기준</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${turn.chip}">${turn.label}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">PER</div><div class="check-value">${pe!=null?fmt(pe,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver':d.forwardPE?'Forward':d.trailingPE?'Trailing':'공급원 미제공'}</div></div><div class="check-card"><div class="check-title">EPS</div><div class="check-value">${eps!=null?fmt(eps,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver EPS':d.forwardEps?'Forward':d.trailingEps?'Trailing':'공급원 미제공'}</div></div>${fourth}<div class="check-card"><div class="check-title">영업이익</div><div class="check-value" style="font-size:16px">${turn.label}</div><div class="check-note">${turn.note}</div></div></div></div>`;
+}
+function renderStockCard(stock,sectorId){
+ const t=stock.ticker.toUpperCase().trim(),d=live[t]||live[normalizeSymbol(t)]||{},price=d.price??null,high=d.high52w??getHistoryHigh(t),chg=d.changePct??null,currency=d.currency??(stock.country==='KR'?'KRW':'USD'),dd=drawdown(price,high),dds=ddStyle(dd),ma=maAlignmentProfile(t,price),vol=volumeSignalProfile(t),macd=macdProfile(chartDataFor(t)),turn=turnaroundProfile(d);
+ return `<div class="scard clickable" onclick="openChartByTicker('${jsArg(t)}','${jsArg(stock.name||t)}','${jsArg(stock.country||'US')}')"><div><div class="scard-name">${stock.name||t}</div><div class="scard-ticker">${t}${stock.note?` · <span class="scard-note">${stock.note}</span>`:''}</div></div><div class="scard-price">${fmtStockPrice(price,currency)}</div><div class="scard-chg" style="color:${chg!=null?(chg>=0?'var(--red)':'var(--blue)'):'var(--muted)'}">${chg!=null?fmtPct(chg):'—'}</div><div><div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap"><span class="scard-dd ${dds.cls}">${dd!=null?'고점 '+dd.toFixed(1)+'%':'고점 —'}</span><span class="chip ${ma.chip}">${ma.label}</span><span class="chip ${vol.chip}">${vol.vr!=null?'거래 '+fmt(vol.vr,1)+'배':'거래 대기'}</span><span class="chip ${macd.chip}">${macd.label}</span><span class="chip ${turn.chip}">${turn.label}</span></div></div><div class="scard-actions"><button class="btn mini-btn" onclick="event.stopPropagation();moveStock('${sectorId}','${t}',-1)">←</button><button class="btn mini-btn" onclick="event.stopPropagation();moveStock('${sectorId}','${t}',1)">→</button><button class="btn btn-danger mini-btn" onclick="event.stopPropagation();removeStock('${sectorId}','${t}')">삭제</button></div></div>`;
+}
+function renderLeaderEtfs(){
+ const box=document.getElementById('leader-etfs');if(!box)return;
+ const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)]||{},p=d.price??null,r1=periodReturn(e.ticker,21),r3=periodReturn(e.ticker,63),r6=periodReturn(e.ticker,126),ma=maAlignmentProfile(e.ticker,p),score=(r1??-999)*.45+(r3??-999)*.35+(r6??-999)*.20+(ma.score||0)*3;return {...e,d,p,r1,r3,r6,ma,score}}).filter(x=>x.p!=null).sort((a,b)=>b.score-a.score).slice(0,10);
+ box.innerHTML=`<div class="rotation-board"><div class="mini-head"><div><div class="mini-title">섹터 로테이션</div><div class="mini-note">ETF 1개월·3개월·6개월 수익률과 이동평균 정렬로 주도 섹터를 정렬합니다.</div></div><span class="chip ch-b">ETF 기준</span></div><div class="rotation-list">${rows.length?rows.map(x=>`<div class="rotation-item" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div><div class="rotation-name">${x.name}</div><div class="rotation-sub">${x.ticker} · ${x.country}</div></div><div class="rotation-val" style="color:${(x.r1??0)>=0?'var(--red)':'var(--blue)'}">1M ${x.r1!=null?fmtPct(x.r1):'—'}</div><div class="rotation-val" style="color:${(x.r3??0)>=0?'var(--red)':'var(--blue)'}">3M ${x.r3!=null?fmtPct(x.r3):'—'}</div><div class="rotation-val" style="color:${(x.r6??0)>=0?'var(--red)':'var(--blue)'}">6M ${x.r6!=null?fmtPct(x.r6):'—'}</div><span class="chip ${x.ma.chip}">${x.ma.label}</span></div>`).join(''):'<div class="mini-note">섹터 ETF 데이터 연결 대기</div>'}</div></div>`;
+}
+function chartMasterChecklistHtml(symbol,score,price){
+ const ma=maAlignmentProfile(symbol,price),vol=volumeSignalProfile(symbol),macd=macdProfile(chartDataFor(symbol)),atr=atrPlanProfile(symbol,price),rsi=rsiValue(chartDataFor(symbol)),bb=bollingerProfile(chartDataFor(symbol)),checks=[
+  ['이동평균 정렬',ma.label,ma.chip,ma.note],
+  ['거래량 이상 감지',vol.label,vol.chip,vol.note],
+  ['MACD 모멘텀',macd.label,macd.chip,macd.note],
+  ['RSI 과열/침체',rsi!=null?`RSI ${fmt(rsi,1)}`:'RSI 대기',rsi==null?'ch-b':rsi>=75?'ch-r':rsi>=70?'ch-y':rsi<=30?'ch-b':'ch-g',rsi==null?'데이터 대기':rsi>=75?'단기 과열. 추격매수 주의':rsi<=30?'침체권. 추세 회복 확인':'중립권'],
+  ['볼린저 위치',bb.upper&&price?`상단까지 ${fmt((bb.upper-price)/price*100,1)}%`:'BB 대기',bb.upper&&price&&price>bb.upper?'ch-y':'ch-b','상단 돌파 실패 시 단기 매도 압력 확인'],
+  ['ATR 리스크',atr.label,atr.chip,atr.note]
+ ];
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">투자 대가식 체크</div><span class="chip ${ma.chip}">${ma.label}</span></div><div class="mini-note">자동 매수 신호가 아니라 추세, 거래량, 모멘텀, 변동성 리스크를 한 번에 점검하는 체크리스트입니다.</div><div class="rank-list">${checks.map(([name,label,chip,note])=>`<div class="rank-item"><span><span class="chip ${chip}" style="margin-right:6px">${label}</span>${name}</span><strong>${note}</strong></div>`).join('')}</div></div>`;
+}
+function renderChartModal(label,symbol,price,chg,currency='USD'){
+ const pts=chartDataFor(symbol),rows=pts.filter(p=>Number.isFinite(p.close)),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=rows.map(p=>p.close),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=rows[0]?.close,lastPt=lastPoint(rows),last=lastPt?.close,ret=first&&last?((last/first-1)*100):null,dd=drawdown(price??last,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{};
+ const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—'),range=vals.length?[low,high]:null;
+ const closePath=linePathRange(rows,320,180,12,range),ma5Path=linePathRange(movingSeries(rows,5),320,180,12,range),ma20Path=linePathRange(movingSeries(rows,20),320,180,12,range),ma50Path=linePathRange(movingSeries(rows,50),320,180,12,range),ma200Path=linePathRange(movingSeries(rows,200),320,180,12,range);
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}<button class="btn btn-green mini-btn" onclick="captureChartModal()" style="margin-left:6px">캡쳐</button></div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${valuationPanelHtml(symbol,item)}${technicalUpgradePanel(symbol,price??last,currency)}${chartMasterChecklistHtml(symbol,null,price??last)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts,symbol)}`;
+}
 function openModal(){MANUAL_FIELDS.forEach(([k])=>{const el=document.getElementById('m_'+k);if(el)el.value=manual[k]??''});const refMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(refMap).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=refs[k]??''});THRESHOLD_FIELDS.forEach(([k])=>{const el=document.getElementById('r_'+k);if(el)el.value=refs[k]??DEFAULT_REFS[k]??''});const provider=document.getElementById('set_provider'),alpha=document.getElementById('set_alpha');if(provider)provider.value=settings.provider||'auto';if(alpha)alpha.value=settings.alphaKey||'';document.getElementById('editModal').classList.add('open')}
 function saveModal(){const getV=id=>{const e=document.getElementById(id);return e&&e.value!==''?parseFloat(e.value):null};MANUAL_FIELDS.forEach(([k])=>{const v=getV('m_'+k);if(v!=null)manual[k]=v;else delete manual[k]});const rMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(rMap).forEach(([k,id])=>{const v=getV(id);if(v!=null)refs[k]=v});THRESHOLD_FIELDS.forEach(([k])=>{const v=getV('r_'+k);refs[k]=v!=null?v:DEFAULT_REFS[k]});settings.provider=document.getElementById('set_provider')?.value||'auto';settings.alphaKey=document.getElementById('set_alpha')?.value.trim()||'';save();closeModal();renderAll();fetchAll(true)}
 function switchTab(name,el){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');el.classList.add('active')}
