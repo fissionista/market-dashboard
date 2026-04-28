@@ -80,6 +80,74 @@ async function enrichFundamentals(rows) {
   return rows;
 }
 
+function koreanCode(symbol) {
+  const code = String(symbol || '').toUpperCase().replace(/\.(KS|KQ)$/i, '');
+  return /^\d{6}$/.test(code) ? code : '';
+}
+
+async function fetchNaverSummary(symbol) {
+  const code = koreanCode(symbol);
+  if (!code) return null;
+  try {
+    const url = `https://api.finance.naver.com/service/itemSummary.naver?itemcode=${code}`;
+    const res = await fetch(url, {
+      headers: {
+        accept: 'application/json,text/plain,*/*',
+        referer: `https://finance.naver.com/item/main.naver?code=${code}`,
+        'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const now = Number(data.now);
+    const diff = Number(data.diff);
+    const rate = Number(data.rate);
+    const per = Number(data.per);
+    const eps = Number(data.eps);
+    const pbr = Number(data.pbr);
+    return {
+      symbol,
+      regularMarketPrice: Number.isFinite(now) ? now : null,
+      regularMarketPreviousClose: Number.isFinite(now) && Number.isFinite(diff) ? now - diff : null,
+      regularMarketChangePercent: Number.isFinite(rate) ? rate : null,
+      fiftyTwoWeekHigh: null,
+      fiftyTwoWeekLow: null,
+      currency: 'KRW',
+      shortName: symbol,
+      trailingPE: Number.isFinite(per) && per > 0 ? per : null,
+      forwardPE: null,
+      trailingEps: Number.isFinite(eps) ? eps : null,
+      forwardEps: null,
+      priceToBook: Number.isFinite(pbr) && pbr > 0 ? pbr : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function enrichKoreanQuotes(rows, symbols) {
+  const out = rows.map((r) => ({ ...r }));
+  const rowByCode = new Map(out.map((r) => [koreanCode(r.symbol), r]).filter(([code]) => code));
+  const targets = [...new Set(symbols.map(koreanCode).filter(Boolean))].slice(0, 40);
+  for (let i = 0; i < targets.length; i += 8) {
+    const settled = await Promise.allSettled(targets.slice(i, i + 8).map((code) => fetchNaverSummary(code)));
+    settled.forEach((s, idx) => {
+      if (s.status !== 'fulfilled' || !s.value) return;
+      const code = targets[i + idx];
+      const row = rowByCode.get(code);
+      if (row) {
+        Object.entries(s.value).forEach(([k, v]) => {
+          if (v != null && (row[k] == null || row[k] === '')) row[k] = v;
+        });
+        row.currency = 'KRW';
+      } else {
+        out.push({ ...s.value, symbol: code });
+      }
+    });
+  }
+  return out;
+}
+
 function yahooHeaders() {
   return {
     accept: 'application/json,text/html,text/plain,*/*',
@@ -176,7 +244,8 @@ export default async function handler(req, res) {
     const data = await fetchYahoo(symbols);
     const rows = data?.quoteResponse?.result || [];
     if (rows.length) {
-      res.status(200).json({ quoteResponse: { result: await enrichFundamentals(rows.map(normalizeQuote)) } });
+      const enriched = await enrichKoreanQuotes(await enrichFundamentals(rows.map(normalizeQuote)), symbols);
+      res.status(200).json({ quoteResponse: { result: enriched } });
       return;
     }
   } catch {}
@@ -184,7 +253,8 @@ export default async function handler(req, res) {
   try {
     const fallback = await fetchFallback(symbols);
     const rows = fallback?.quoteResponse?.result || [];
-    res.status(200).json({ quoteResponse: { result: await enrichFundamentals(rows.map(normalizeQuote)) } });
+    const enriched = await enrichKoreanQuotes(await enrichFundamentals(rows.map(normalizeQuote)), symbols);
+    res.status(200).json({ quoteResponse: { result: enriched } });
   } catch (error) {
     res.status(502).json({ error: String(error?.message || error) });
   }
