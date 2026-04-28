@@ -11,19 +11,19 @@ async function fetchSeries(symbol) {
   const result = data?.chart?.result?.[0];
   const timestamps = result?.timestamp || [];
   const quote = result?.indicators?.quote?.[0] || {};
-  const closes = quote.close || [];
   const opens = quote.open || [];
   const highs = quote.high || [];
   const lows = quote.low || [];
+  const closes = quote.close || [];
   const volumes = quote.volume || [];
   return timestamps
     .map((ts, i) => ({
       t: ts * 1000,
+      open: opens[i],
+      high: highs[i],
+      low: lows[i],
       close: closes[i],
-      open: Number.isFinite(opens[i]) ? opens[i] : null,
-      high: Number.isFinite(highs[i]) ? highs[i] : null,
-      low: Number.isFinite(lows[i]) ? lows[i] : null,
-      volume: Number.isFinite(volumes[i]) ? volumes[i] : null,
+      volume: volumes[i],
     }))
     .filter((p) => Number.isFinite(p.close));
 }
