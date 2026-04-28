@@ -1141,6 +1141,67 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
  const businessPanel=valuationPanelHtml(symbol,item);
  document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}<button class="btn btn-green mini-btn" onclick="captureChartModal()" style="margin-left:6px">캡쳐</button></div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${fourViewPanelHtml(symbol,price)}${maBandPanelHtml(symbol,price)}${chartMasterChecklistHtml(symbol,score,price)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts,symbol)}${businessPanel}`;
 }
+function cleanNum(v){const n=Number(v);return Number.isFinite(n)?n:null}
+function dataText(v,dec=1,kind='number'){const n=cleanNum(v);if(n==null)return '<span style="color:var(--muted)">미제공</span>';if(kind==='pct')return fmtPct(n*100);return fmt(n,dec)}
+function valuationPanelHtml(symbol,item={}){
+ const d=item||live[symbol]||live[normalizeSymbol(symbol)]||{},isKr=/^\d{6}(\.KS|\.KQ)?$/i.test(symbol)||d.currency==='KRW';
+ const pe=d.forwardPE??d.trailingPE??null,eps=d.forwardEps??d.trailingEps??null,pbr=d.priceToBook??null,ps=d.priceToSales??null,growth=d.earningsGrowth??d.revenueGrowth??null;
+ const peLabel=pe==null?'미제공':pe<15?'낮음':pe<25?'보통':pe<45?'부담':'높음';
+ const growthLabel=growth==null?'미제공':growth>0.15?'개선':growth>0?'완만':growth>-0.1?'둔화':'악화';
+ const fourth=isKr
+  ? `<div class="check-card"><div class="check-title">PBR</div><div class="check-value">${pbr!=null?fmt(pbr,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">Naver 제공 시 표시</div></div>`
+  : `<div class="check-card"><div class="check-title">P/S</div><div class="check-value">${ps!=null?fmt(ps,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">미국주 중심 제공</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${growth==null?'ch-b':growth>0.15?'ch-g':growth>0?'ch-b':growth>-0.1?'ch-y':'ch-r'}">${growthLabel}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">PER</div><div class="check-value">${pe!=null?fmt(pe,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver 기준':d.forwardPE?'Forward':d.trailingPE?'Trailing':'공급원 미제공'} · ${peLabel}</div></div><div class="check-card"><div class="check-title">EPS</div><div class="check-value">${eps!=null?fmt(eps,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver EPS':d.forwardEps?'Forward':d.trailingEps?'Trailing':'공급원 미제공'}</div></div>${fourth}<div class="check-card"><div class="check-title">성장률</div><div class="check-value">${growth!=null?fmtPct(growth*100):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${growth==null?'국내/일부 종목은 자동 제공 안 됨':d.earningsGrowth!=null?'이익 성장률':'매출 성장률'}</div></div></div></div>`;
+}
+function chartMasterChecklistHtml(symbol,score,price){
+ const pts=chartDataFor(symbol),last=price??lastPoint(pts)?.close,ma20=movingAverage(pts,20),ma50=movingAverage(pts,50),ma200=movingAverage(pts,200),hi=getHistoryHigh(symbol),vr=volumeRatio(pts),rsi=rsiValue(pts);
+ const highGap=last&&hi?(last/hi-1)*100:null;
+ const rows=[
+  ['장기 추세',last!=null&&ma200!=null?last>ma200:null,ma200?`200일선 ${fmt(ma200,2)}`:'차트 부족'],
+  ['중기 추세',last!=null&&ma50!=null?last>ma50:null,ma50?`50일선 ${fmt(ma50,2)}`:'차트 부족'],
+  ['20일선 회복',last!=null&&ma20!=null?last>ma20:null,ma20?`20일선 ${fmt(ma20,2)}`:'차트 부족'],
+  ['신고가 접근',highGap!=null?highGap>=-10:null,highGap!=null?fmtPct(highGap):'52주 고점 부족'],
+  ['거래량 확인',vr!=null?vr>=1.2:null,vr!=null?`${fmt(vr,1)}배`:'거래량 미제공'],
+  ['RSI 과열 아님',rsi!=null?rsi<75:null,rsi!=null?`RSI ${fmt(rsi,1)}`:'RSI 대기']
+ ];
+ const known=rows.filter(r=>r[1]!=null),pass=known.filter(r=>r[1]).length,ratio=known.length?Math.round(pass/known.length*100):null,chip=ratio==null?'ch-b':ratio>=70?'ch-g':ratio>=50?'ch-y':'ch-r';
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">핵심 차트 체크</div><span class="chip ${chip}">${ratio??'—'}${ratio!=null?'/100':''}</span></div><div class="mini-note">확실히 계산 가능한 추세·신고가·거래량·RSI만 봅니다. 일목/볼린저 세부 해석은 자동판단에서 제외했습니다.</div><div class="rank-list">${rows.map(([name,ok,note])=>`<div class="rank-item"><span><span class="chip ${ok==null?'ch-b':ok?'ch-g':'ch-r'}" style="margin-right:6px">${ok==null?'미제공':ok?'O':'X'}</span>${name}</span><strong>${note}</strong></div>`).join('')}</div></div>`;
+}
+function renderChartModal(label,symbol,price,chg,currency='USD'){
+ const pts=chartDataFor(symbol),rows=pts.filter(p=>Number.isFinite(p.close)),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=rows.map(p=>p.close),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=rows[0]?.close,lastPt=lastPoint(rows),last=lastPt?.close,ret=first&&last?((last/first-1)*100):null,dd=drawdown(price??last,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{},score=expertScore(symbol,price,item);
+ const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—'),range=vals.length?[low,high]:null;
+ const closePath=linePathRange(rows,320,180,12,range),ma5Path=linePathRange(movingSeries(rows,5),320,180,12,range),ma20Path=linePathRange(movingSeries(rows,20),320,180,12,range),ma50Path=linePathRange(movingSeries(rows,50),320,180,12,range),ma200Path=linePathRange(movingSeries(rows,200),320,180,12,range);
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}<button class="btn btn-green mini-btn" onclick="captureChartModal()" style="margin-left:6px">캡쳐</button></div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${maBandPanelHtml(symbol,price)}${chartMasterChecklistHtml(symbol,score,price)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts,symbol)}${valuationPanelHtml(symbol,item)}`;
+}
+function riskLevelFromValue(v,warn,risk,inverse=false){
+ if(v==null)return 'b';
+ if(inverse){if(v<=risk)return 'r';if(v<=warn)return 'y';return 'g'}
+ if(v>=risk)return 'r';if(v>=warn)return 'y';return 'g';
+}
+function buildRiskChecks(){
+ const y10=getPrice('y10'),dxy=getPrice('dxy'),usdkrw=getPrice('usdkrw'),wti=getPrice('wti'),vix=getPrice('vix'),move=getPrice('move'),fg=getFearGreed(),hyg=getPrice('hyg'),hygDd=drawdown(hyg,getHistoryHigh('HYG')),hy=(marketExtras?.highYield||highYieldData)?.latest;
+ const rateParts=[riskLevelFromValue(y10,refs.y10_warn,refs.y10_risk),riskLevelFromValue(dxy,refs.dxy_warn,refs.dxy_risk),riskLevelFromValue(usdkrw,refs.usdkrw_warn,refs.usdkrw_risk)];
+ const volParts=[riskLevelFromValue(vix,refs.vix_warn,refs.vix_risk),riskLevelFromValue(move,refs.move_warn,refs.move_risk)];
+ const creditParts=[riskLevelFromValue(hy,refs.hy_warn,refs.hy_risk),riskLevelFromValue(hygDd,refs.hyg_dd_warn,refs.hyg_dd_risk,true)];
+ const pickLevel=arr=>arr.includes('r')?'r':arr.includes('y')?'y':arr.some(x=>x==='g')?'g':'b';
+ return [
+  {name:'금리/달러 안정?',level:pickLevel(rateParts),meta:riskMeta([y10!=null?`10Y ${fmt(y10,2)}%`:'',dxy!=null?`DXY ${fmt(dxy,1)}`:'',usdkrw!=null?`₩${fmt(usdkrw)}`:''])},
+  {name:'유가 안정?',level:riskLevelFromValue(wti,refs.wti_warn,refs.wti_risk),meta:wti!=null?`WTI $${fmt(wti,1)}`:'데이터 없음'},
+  {name:'변동성 안정?',level:pickLevel(volParts),meta:riskMeta([vix!=null?`VIX ${fmt(vix,1)}`:'',move!=null?`MOVE ${fmt(move,0)}`:''])},
+  {name:'신용위험 안정?',level:pickLevel(creditParts),meta:riskMeta([hy!=null?`HY ${fmt(hy,2)}%`:'',hygDd!=null?`HYG 고점 ${hygDd.toFixed(1)}%`:''])},
+  {name:'심리 과열 아님?',level:fg==null?'b':fg>=refs.fg_extreme_greed?'r':fg>=refs.fg_greed?'y':'g',meta:fg!=null?`F&G ${Math.round(fg)}`:'데이터 없음'}
+ ];
+}
+function renderRiskChecklist(){
+ const box=document.getElementById('riskChecklist');if(!box)return;
+ const rows=buildRiskChecks(),known=rows.filter(r=>r.level!=='b'),red=known.filter(r=>r.level==='r').length,yellow=known.filter(r=>r.level==='y').length,overall=red?'r':yellow>=2?'y':known.length?'g':'b';
+ const score=known.reduce((s,r)=>s+(r.level==='r'?1:0),0);
+ box.innerHTML=`<div class="risk-check"><div class="risk-head"><div class="risk-title">리스크 점검표</div><div class="risk-score" style="color:var(--${overall==='r'?'red':overall==='y'?'yellow':overall==='g'?'green':'muted'})">${riskText(overall)} · 위험 ${score}/${known.length||5}</div></div>${rows.map(r=>`<div class="risk-row"><span class="risk-dot dot-${r.level}"></span><span class="risk-label">${r.name}</span><span class="risk-meta">${r.meta||'데이터 없음'}</span></div>`).join('')}</div>${riskChartsCard()}`;
+}
+function renderSignalPanels(){
+ const box=document.getElementById('signalPanels');if(!box)return;
+ box.innerHTML=`${earningsSeasonCard()}${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
+}
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);
  renderChartModal(label,symbol,price,chg,item?.currency||'USD');document.getElementById('chartModal').classList.add('open');
