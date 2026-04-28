@@ -161,7 +161,6 @@ input:focus,select:focus{border-color:var(--blue)}
   </div>
 
   <div class="tab-content" id="tab-sectors">
-    <div class="section"><div class="section-title">🔥 주요 신고가 현황</div><div id="high-list-card"></div></div>
     <div class="section"><div class="section-title">주도 섹터 ETF</div><div class="grid g4" id="leader-etfs"></div></div>
     <div class="toolbar">
       <div class="form-row">
@@ -438,6 +437,29 @@ async function searchTicker(q){
    const data=await res.json();
    return data.results||[];
  }catch(e){return []}
+}
+const LOCAL_SEARCH=[
+ ['삼성전자','005930.KS','삼성전자','KR','Korea'],['삼전','005930.KS','삼성전자','KR','Korea'],['삼성전자우','005935.KS','삼성전자우','KR','Korea'],
+ ['sk하이닉스','000660.KS','SK하이닉스','KR','Korea'],['하이닉스','000660.KS','SK하이닉스','KR','Korea'],['한미반도체','042700.KS','한미반도체','KR','Korea'],['원익ips','240810.KQ','원익IPS','KR','Korea'],
+ ['삼성전기','009150.KS','삼성전기','KR','Korea'],['이수페타시스','007660.KS','이수페타시스','KR','Korea'],
+ ['hd현대일렉트릭','267260.KS','HD현대일렉트릭','KR','Korea'],['현대일렉트릭','267260.KS','HD현대일렉트릭','KR','Korea'],['효성중공업','298040.KS','효성중공업','KR','Korea'],['ls electric','010120.KS','LS ELECTRIC','KR','Korea'],['ls일렉트릭','010120.KS','LS ELECTRIC','KR','Korea'],
+ ['두산에너빌리티','034020.KS','두산에너빌리티','KR','Korea'],['현대건설','000720.KS','현대건설','KR','Korea'],['한전kps','051600.KS','한전KPS','KR','Korea'],['oci홀딩스','010060.KS','OCI홀딩스','KR','Korea'],
+ ['네이버','035420.KS','NAVER','KR','Korea'],['카카오','035720.KS','카카오','KR','Korea'],['현대차','005380.KS','현대차','KR','Korea'],['기아','000270.KS','기아','KR','Korea'],
+ ['엔비디아','NVDA','NVIDIA','US','Nasdaq'],['마이크론','MU','Micron','US','Nasdaq'],['팔란티어','PLTR','Palantir','US','NYSE'],['테슬라','TSLA','Tesla','US','Nasdaq'],['애플','AAPL','Apple','US','Nasdaq'],['마이크로소프트','MSFT','Microsoft','US','Nasdaq'],['아마존','AMZN','Amazon','US','Nasdaq'],['메타','META','Meta','US','Nasdaq'],['구글','GOOGL','Alphabet','US','Nasdaq'],['알파벳','GOOGL','Alphabet','US','Nasdaq'],['브로드컴','AVGO','Broadcom','US','Nasdaq'],['버티브','VRT','Vertiv','US','NYSE'],['루멘텀','LITE','Lumentum','US','Nasdaq'],['코히런트','COHR','Coherent','US','NYSE'],['로켓랩','RKLB','Rocket Lab','US','Nasdaq'],['아이온큐','IONQ','IonQ','US','NYSE']
+].map(([key,symbol,name,country,exchange])=>({key,symbol,name,country,exchange}));
+function localSearchTicker(q){
+ const s=String(q||'').toLowerCase().replace(/\s+/g,'');
+ return LOCAL_SEARCH.filter(x=>x.key.toLowerCase().replace(/\s+/g,'').includes(s)||s.includes(x.key.toLowerCase().replace(/\s+/g,''))||x.symbol.toLowerCase().includes(s)||x.name.toLowerCase().replace(/\s+/g,'').includes(s)).map(({symbol,name,country,exchange})=>({symbol,name,country,exchange}));
+}
+async function searchTicker(q){
+ if(!q.trim())return [];
+ const local=localSearchTicker(q);
+ let remote=[];
+ try{
+   const res=await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`,{cache:'no-store',signal:AbortSignal.timeout(9000)});
+   if(res.ok){const data=await res.json();remote=data.results||[]}
+ }catch(e){}
+ return [...local,...remote].filter((x,i,a)=>a.findIndex(y=>String(y.symbol).toUpperCase()===String(x.symbol).toUpperCase())===i);
 }
 async function fetchMarketExtras(){
  if(location.protocol==='file:')return null;
@@ -980,6 +1002,30 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
   : `<div class="mini-card"><div class="mini-head"><div class="mini-title">지수·ETF 점검</div><span class="chip ${action.chip}">${action.label}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">1차 경고</div><div class="check-value" style="font-size:15px">50일선</div><div class="check-note">단기 추세 이탈 여부를 봅니다.</div></div><div class="check-card"><div class="check-title">2·3차 경고</div><div class="check-value" style="font-size:15px">200일선</div><div class="check-note">장기 추세 훼손 여부를 봅니다.</div></div></div></div>`;
  const riskPanel=`<div class="mini-card"><div class="mini-head"><div class="mini-title">리스크 체크</div><span class="chip ${action.chip}">${action.label}</span></div><div class="mini-note">${riskSummary(score,dd,ret)}</div><div class="decision-note">손절 기준과 계좌 내 비중을 정하기 전에는 점수가 높아도 관찰 후보로만 보세요.</div></div>`;
  document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol} · 최근 1년${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${scorePanelHtml(score)}${chartMasterChecklistHtml(symbol,score,price)}${businessPanel}${riskPanel}${indicatorPanelHtml(score)}<div class="grid g3" style="margin-top:12px"><div class="mini-card"><div class="mini-title">1년 고점</div><div class="mini-value">${high!=null?fmt(high,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 저점</div><div class="mini-value">${low!=null?fmt(low,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 수익률</div><div class="mini-value" style="color:${ret!=null?(ret>=0?'var(--red)':'var(--blue)'):'var(--muted)'}">${ret!=null?fmtPct(ret):'—'}</div></div></div><div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts)}`;
+}
+function checkMark(status){return status==='pass'?'O':status==='warn'?'주의':status==='wait'?'대기':'X'}
+function maBandPanelHtml(symbol,price){
+ const pts=chartDataFor(symbol),last=price??lastPoint(pts)?.close,ma5=movingAverage(pts,5),ma20=movingAverage(pts,20),ma50=movingAverage(pts,50),ma200=movingAverage(pts,200);
+ const below5=last!=null&&ma5!=null&&last<ma5,below20=last!=null&&ma20!=null&&last<ma20,below50=last!=null&&ma50!=null&&last<ma50;
+ let label='보유 기준 양호',chip='ch-g',note='5일선과 20일선 위에 있으면 단기 추세는 살아있는 편입니다.';
+ if(below20){label='20일선 이탈';chip='ch-r';note='단기/스윙 관점에서는 추세 훼손입니다. 전량 정리 규칙은 빠르지만 손실 확대를 막는 데 유리합니다.'}
+ else if(below5){label='5일선 이탈';chip='ch-y';note='초단기 속도 둔화입니다. 절반 축소 규칙은 강한 추세주에서는 흔들림이 많아 분할 대응이 낫습니다.'}
+ else if(below50){label='50일선 아래';chip='ch-y';note='중기 추세 확인이 필요합니다. 반등만 보고 추격하기보다 20일선 회복을 봅니다.'}
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">매수·매도 밴드</div><span class="chip ${chip}">${label}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">5일선</div><div class="check-value">${ma5!=null?fmt(ma5,2):'—'}</div><div class="check-note">이탈 시 절반 축소 후보</div></div><div class="check-card"><div class="check-title">20일선</div><div class="check-value">${ma20!=null?fmt(ma20,2):'—'}</div><div class="check-note">이탈 시 전량 정리 후보</div></div><div class="check-card"><div class="check-title">50일선</div><div class="check-value">${ma50!=null?fmt(ma50,2):'—'}</div><div class="check-note">중기 추세 방어선</div></div><div class="check-card"><div class="check-title">200일선</div><div class="check-value">${ma200!=null?fmt(ma200,2):'—'}</div><div class="check-note">장기 추세선</div></div></div><div class="mini-note" style="margin-top:8px">${note}</div></div>`;
+}
+function chartMasterChecklistHtml(symbol,score,price){
+ const checks=chartMasterChecklist(symbol,score,price).filter(c=>c.status!=='wait'),pass=checks.filter(c=>c.status==='pass').length,warn=checks.filter(c=>c.status==='warn').length,total=checks.length,ratio=total?Math.round(pass/total*100):null;
+ const label=ratio==null?'대기':ratio>=75&&warn<=2?'강함':ratio>=60?'관심':ratio>=45?'중립':'약함',chip=ratio==null?'ch-b':ratio>=75&&warn<=2?'ch-g':ratio>=60?'ch-b':ratio>=45?'ch-y':'ch-r';
+ const pick=['현재가 > 200일선','현재가 > 50일선','50일선 > 200일선','52주 고점 -10% 이내','구름대 상향 돌파','현재가가 구름대 위','상단까지 여유','돌파 실패 아님','RSI 50 이상 회복','거래량 1.5배 이상','시장 대비 강함','50일선 이격 과열 아님','RSI 75 미만'];
+ const rows=checks.filter(c=>pick.some(p=>c.name.includes(p))).slice(0,14);
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 O/X</div><span class="chip ${chip}">${label} ${ratio??'—'}</span></div><div class="rank-list">${rows.map(c=>`<div class="rank-item"><span><span class="chip ${checkChip(c.status)}" style="margin-right:6px">${checkMark(c.status)}</span>${c.name}</span><strong>${c.meta||''}</strong></div>`).join('')}</div></div>`;
+}
+function renderChartModal(label,symbol,price,chg,currency='USD'){
+ const pts=chartDataFor(symbol),rows=pts.filter(p=>Number.isFinite(p.close)),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=rows.map(p=>p.close),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=rows[0]?.close,lastPt=lastPoint(rows),last=lastPt?.close,ret=first&&last?((last/first-1)*100):null,dd=drawdown(price??last,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{},score=expertScore(symbol,price,item),quality=stockQualitySummary(item);
+ const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—'),range=vals.length?[low,high]:null;
+ const closePath=linePathRange(rows,320,180,12,range),ma5Path=linePathRange(movingSeries(rows,5),320,180,12,range),ma20Path=linePathRange(movingSeries(rows,20),320,180,12,range),ma50Path=linePathRange(movingSeries(rows,50),320,180,12,range),ma200Path=linePathRange(movingSeries(rows,200),320,180,12,range);
+ const businessPanel=isIndividualEquity(symbol)?`<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${quality.earningsChip}">${quality.earnings}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">성장</div><div class="check-value">${quality.growth!=null?fmtPct(quality.growth*100):'—'}</div><div class="check-note">최근 매출/이익 성장률</div></div><div class="check-card"><div class="check-title">PER</div><div class="check-value">${quality.pe?fmt(quality.pe,1):'—'}</div><div class="check-note">${quality.price}</div></div></div></div>`:'';
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${maBandPanelHtml(symbol,price)}${chartMasterChecklistHtml(symbol,score,price)}${businessPanel}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts)}`;
 }
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);
