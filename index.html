@@ -81,6 +81,7 @@ input:focus,select:focus{border-color:var(--blue)}
 .action-card{border-color:rgba(36,107,219,.28);background:linear-gradient(180deg,#ffffff,#f4f8ff)}
 .action-label{font-size:18px;font-weight:900;color:#111827;margin:4px 0}.action-label.safe{color:var(--green)}.action-label.warn{color:var(--yellow)}.action-label.danger{color:var(--red)}.action-label.info{color:var(--blue)}
 .check-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.check-card{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px;min-height:82px}.check-title{font-size:11px;font-weight:900;color:#111827;margin-bottom:4px}.check-value{font-size:17px;font-weight:900;color:#111827}.check-note{font-size:10px;line-height:1.45;color:var(--muted);margin-top:3px}
+.high-report{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:0 8px 18px rgba(54,79,125,.07);font-size:12px;line-height:1.55;white-space:pre-wrap}.high-report-title{font-size:16px;font-weight:900;color:#111827;margin-bottom:4px}.high-report-date{color:var(--muted);font-size:11px;margin-bottom:8px}.leader-card{padding:12px;min-height:0}.leader-card .card-value{font-size:20px;margin-bottom:6px}.leader-card .card-label{font-size:11px;margin-bottom:6px}
 .stage-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}.stage{border:1px solid var(--border);border-radius:8px;padding:7px 5px;text-align:center;font-size:10px;color:var(--muted);font-weight:800}.stage.on{border-color:var(--blue);background:var(--blue-dim);color:var(--blue)}.stage.buy{border-color:var(--green);background:var(--green-dim);color:var(--green)}.stage.warn{border-color:var(--yellow);background:var(--yellow-dim);color:var(--yellow)}
 .tv-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px;min-height:470px;overflow:hidden;box-shadow:0 12px 28px rgba(54,79,125,.09)}
 .tradingview-widget-container,.tradingview-widget-container__widget{width:100%;height:100%}
@@ -125,7 +126,7 @@ input:focus,select:focus{border-color:var(--blue)}
   <div class="tab-content active" id="tab-dashboard">
     <div id="dashboardCapture">
       <div class="section"><div class="section-title">글로벌 지수</div><div class="grid g4" id="global-indices"></div></div>
-      <div class="section"><div class="section-title">주도 섹터 ETF</div><div class="grid g4" id="leader-etfs"></div></div>
+    </div>
       <div class="grid g2" style="margin-bottom:24px;gap:16px">
         <div class="section" style="margin-bottom:0"><div class="section-title">금리 / 채권</div><div class="card" id="yield-card"></div></div>
         <div class="section" style="margin-bottom:0">
@@ -149,7 +150,6 @@ input:focus,select:focus{border-color:var(--blue)}
       </div>
       <div class="section"><div class="section-title">환율</div><div class="grid g3" id="forex"></div></div>
       <div class="section"><div class="section-title">원자재 / 암호화폐</div><div class="grid g4" id="commodities"></div></div>
-    </div>
     <div class="section">
       <div class="section-title">선택 그래프</div>
       <div class="tv-controls">
@@ -161,6 +161,8 @@ input:focus,select:focus{border-color:var(--blue)}
   </div>
 
   <div class="tab-content" id="tab-sectors">
+    <div class="section"><div class="section-title">🔥 주요 신고가 현황</div><div id="high-list-card"></div></div>
+    <div class="section"><div class="section-title">주도 섹터 ETF</div><div class="grid g4" id="leader-etfs"></div></div>
     <div class="toolbar">
       <div class="form-row">
         <div class="field"><label>사용자</label><select id="profileSelect" onchange="selectProfile(this.value)"></select></div>
@@ -267,7 +269,28 @@ const LEADER_ETFS=[
  {ticker:'XLK',name:'미국 기술주',country:'US'},{ticker:'XLC',name:'미국 커뮤니케이션',country:'US'},{ticker:'XLY',name:'미국 소비재',country:'US'},{ticker:'XLI',name:'미국 산업재',country:'US'},
  {ticker:'XLE',name:'미국 에너지',country:'US'},{ticker:'XLF',name:'미국 금융',country:'US'},{ticker:'XLV',name:'미국 헬스케어',country:'US'},{ticker:'XLU',name:'미국 유틸리티',country:'US'},
  {ticker:'XLB',name:'미국 소재',country:'US'},{ticker:'XLRE',name:'미국 리츠',country:'US'},{ticker:'SOXX',name:'미국 반도체',country:'US'},{ticker:'SMH',name:'미국 반도체 대형',country:'US'},
- {ticker:'091160.KS',name:'한국 반도체',country:'KR'},{ticker:'305720.KS',name:'한국 2차전지',country:'KR'},{ticker:'117460.KS',name:'한국 에너지화학',country:'KR'},{ticker:'102110.KS',name:'한국 코스피200',country:'KR'}
+ {ticker:'091160.KS',name:'한국 반도체',country:'KR'},{ticker:'305720.KS',name:'한국 2차전지',country:'KR'},{ticker:'117460.KS',name:'한국 에너지화학',country:'KR'},{ticker:'102110.KS',name:'한국 코스피200',country:'KR'},
+ {ticker:'SPY',name:'S&P500 ETF',country:'US'},{ticker:'GRID',name:'전력 인프라 ETF',country:'US'},{ticker:'LIT',name:'리튬 ETF',country:'US'},{ticker:'EWY',name:'한국 ETF',country:'US'},{ticker:'DRAM',name:'메모리 ETF',country:'US'}
+];
+const HIGH_WATCH=[
+ {ticker:'NVDA',name:'NVDA',note:'AI GPU',group:'🤖 AI인프라·광통신'},
+ {ticker:'GOOGL',name:'GOOGL',note:'빅테크·AI',group:'🤖 AI인프라·광통신'},
+ {ticker:'VRT',name:'VRT',note:'AI 전력 인프라',group:'🤖 AI인프라·광통신'},
+ {ticker:'LITE',name:'LITE',note:'광통신',group:'🤖 AI인프라·광통신'},
+ {ticker:'COHR',name:'COHR',note:'광통신',group:'🤖 AI인프라·광통신'},
+ {ticker:'INTC',name:'INTC',note:'CPU',group:'💽 반도체·장비'},
+ {ticker:'MU',name:'MU',note:'메모리',group:'💽 반도체·장비'},
+ {ticker:'AMKR',name:'AMKR',note:'반도체 패키징',group:'💽 반도체·장비'},
+ {ticker:'TSM',name:'TSM',note:'파운드리',group:'💽 반도체·장비'},
+ {ticker:'SNDK',name:'SNDK',note:'스토리지',group:'💾 스토리지'},
+ {ticker:'SMH',name:'SMH',note:'반도체 ETF',group:'🌏 ETF'},
+ {ticker:'SOXX',name:'SOXX',note:'반도체 ETF',group:'🌏 ETF'},
+ {ticker:'GRID',name:'GRID',note:'전력 인프라 ETF',group:'🌏 ETF'},
+ {ticker:'LIT',name:'LIT',note:'리튬 ETF',group:'🌏 ETF'},
+ {ticker:'SPY',name:'SPY',note:'S&P500 ETF',group:'🌏 ETF'},
+ {ticker:'XLK',name:'XLK',note:'테크 ETF',group:'🌏 ETF'},
+ {ticker:'EWY',name:'EWY',note:'한국 ETF',group:'🌏 ETF'},
+ {ticker:'DRAM',name:'DRAM',note:'메모리 ETF',group:'🌏 ETF'}
 ];
 const MANUAL_FIELDS=[['sp','S&P 500'],['nasdaq','나스닥'],['kospi','코스피'],['kosdaq','코스닥'],['usdkrw','USD/KRW'],['dxy','DXY'],['usdjpy','USD/JPY'],['wti','WTI'],['gold','Gold'],['btc','비트코인'],['y10','10Y 금리'],['y5','5Y 금리'],['y2','2Y 금리'],['vix','VIX'],['fg','Fear & Greed']];
 const DEFAULT_REFS={sp_ref:6100,nasdaq_ref:20000,kospi_ref:3300,jpy_sig:180,y10_warn:4,y10_risk:4.5,usdkrw_warn:1400,usdkrw_risk:1500,dxy_warn:100,dxy_risk:105,vix_warn:20,vix_risk:30,move_warn:100,move_risk:130,wti_warn:90,wti_risk:100,fg_fear:25,fg_extreme:10,fg_greed:70,fg_extreme_greed:80,kimchi_warn:3,kimchi_risk:7,hy_warn:4,hy_risk:5,hyg_dd_warn:-4,hyg_dd_risk:-8};
@@ -296,7 +319,7 @@ function syncDefaultSectors(profile){if(!Array.isArray(profile.sectors))profile.
 function load(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');manual=s.manual||{};refs={...DEFAULT_REFS,...(s.refs||{})};snapshots=s.snapshots||[];profiles=s.profiles||seedProfiles();activeProfile=s.activeProfile&&profiles[s.activeProfile]?s.activeProfile:Object.keys(profiles)[0];settings=s.settings||{provider:'auto',alphaKey:''};Object.values(profiles).forEach(syncDefaultSectors);const old=Array.isArray(settings.tvItems)?settings.tvItems:[];settings.tvItems=DEFAULT_TV.map(def=>({...def,on:old.find(x=>x.id===def.id)?.on??def.on}));settings.chartSymbol=settings.chartSymbol==='NASDAQ:IXIC'?'NASDAQ:NDX':(settings.chartSymbol||settings.tvItems.find(x=>x.on)?.symbol||'FOREXCOM:SPXUSD');if(settings.provider==='widget'){settings.provider='auto';localStorage.setItem(STORAGE_KEY,JSON.stringify({manual,refs,snapshots,profiles,activeProfile,settings}));}}catch(e){refs={...DEFAULT_REFS};profiles=seedProfiles();settings={provider:'auto',alphaKey:'',tvItems:clone(DEFAULT_TV),chartSymbol:'FOREXCOM:SPXUSD'};}}
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({manual,refs,snapshots,profiles,activeProfile,settings}));}
 function sectors(){return profiles[activeProfile]?.sectors||[]}
-function allSymbols(){return [...new Set([...Object.values(SYM),...LEADER_ETFS.map(e=>e.ticker),...sectors().flatMap(s=>s.stocks.map(st=>st.ticker.toUpperCase().trim())).filter(Boolean)])]}
+function allSymbols(){return [...new Set([...Object.values(SYM),...LEADER_ETFS.map(e=>e.ticker),...HIGH_WATCH.map(e=>e.ticker),...sectors().flatMap(s=>s.stocks.map(st=>st.ticker.toUpperCase().trim())).filter(Boolean)])]}
 function setStatus(s,txt){const el=document.getElementById('refreshStatus');el.textContent=txt;el.className=s==='ok'?'st-ok':s==='err'?'st-err':'st-load'}
 
 function stooqSymbol(symbol){
@@ -527,8 +550,9 @@ function ddChip(dd){if(dd==null)return '<span class="chip ch-b">고점 —</span
 function changeCardCls(chg,fallback='c-info'){return chg==null?fallback:(chg>=0?'c-danger':'c-info')}
 function nearHighLabel(price,high){if(price==null||high==null)return null;const gap=(price/high-1)*100;if(gap>=0)return '신고가';if(gap>=-1)return '신고가권';if(gap>=-2)return '고점 -2%';if(gap>=-5)return '고점 -5%';return null}
 function indexCard(label,key,refKey,badge){const p=getPrice(key),chg=getChangePct(key),high=getHigh52(key,refKey),dd=drawdown(p,high),near=nearHighLabel(p,high);return `<div class="card clickable ${near?'c-purple':changeCardCls(chg)}" onclick="openChartByKey('${jsArg(label)}','${jsArg(key)}')"><div class="card-label">${label}${badge?` <span class="chip ch-p">${badge}</span>`:''}${near?` <span class="chip ch-p">${near}</span>`:''}</div><div class="card-value">${p!=null?fmt(p):'<span style="font-size:16px;color:var(--muted)">—</span>'}</div><div class="card-sub">${high?`<span style="font-size:10px">고점 ${fmt(high)}</span>`:''}${ddChip(dd)}${chg!=null?`<span class="chip ${changeCls(chg)}">${fmtPct(chg)}</span>`:''}</div></div>`}
+function nearHighLabel(price,high){if(price==null||high==null)return null;const gap=(price/high-1)*100;if(gap>=0)return '🚀 신고가';if(gap>=-1)return '🚀 신고가권';if(gap>=-2)return '고점 -2%';if(gap>=-5)return '고점 -5%';return null}
 function priceCard(label,key,statusFn,prefix='',suffix='',markArgs=null,extra=''){const p=getPrice(key),chg=getChangePct(key),s=p!=null?statusFn(p):{cls:'c-info',chip:'ch-b',label:'—'},high=getHigh52(key,null),dd=drawdown(p,high),cls=key==='gold'||key==='btc'?changeCardCls(chg,s.cls):s.cls;return `<div class="card clickable ${cls}" onclick="openChartByKey('${jsArg(label)}','${jsArg(key)}')"><div class="card-label">${label}</div><div class="card-value sm">${p!=null?(prefix+fmt(p,prefix==='$'?2:0)+(suffix?` <span style="font-size:13px">${suffix}</span>`:'')):'<span style="font-size:16px;color:var(--muted)">—</span>'}</div><div class="card-sub"><span class="chip ${s.chip}">${s.label}</span>${chg!=null?`<span style="${pctColor(chg)};font-size:11px;font-weight:800">${fmtPct(chg)}</span>`:''}${dd!=null?ddChip(dd):''}${extra}</div>${p!=null&&markArgs?tbar(p,markArgs[0],markArgs[1],markArgs[2],statusFn):''}</div>`}
-function renderAll(){renderProfiles();renderMarketJudgement();renderGlobal();renderLeaderEtfs();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderTradingViewWidgets()}
+function renderAll(){renderProfiles();renderMarketJudgement();renderGlobal();renderLeaderEtfs();renderHighList();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderTradingViewWidgets()}
 function renderGlobal(){document.getElementById('global-indices').innerHTML=indexCard('S&P 500','sp','sp_ref')+indexCard('나스닥','nasdaq','nasdaq_ref')+indexCard('코스피','kospi','kospi_ref')+indexCard('코스닥','kosdaq',null)}
 function leaderEtfRisk(row){
  const r1=periodReturn(row.ticker,21),r3=periodReturn(row.ticker,63);
@@ -537,7 +561,25 @@ function leaderEtfRisk(row){
  if(r3!=null&&r3>8)return {chip:'ch-b',label:'상대강세',note:'최근 3개월 강세입니다. 신고가 돌파 여부를 관찰합니다.'};
  return {chip:'ch-b',label:'관찰',note:'강한 신고가 신호는 아직 아닙니다.'};
 }
-function renderLeaderEtfs(){const box=document.getElementById('leader-etfs');if(!box)return;const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)],p=d?.price??null,high=d?.high52w??getHistoryHigh(e.ticker),dd=drawdown(p,high),chg=d?.changePct??null,near=nearHighLabel(p,high),ret=historyReturn(e.ticker);return {...e,d,p,high,dd,chg,near,ret}}).filter(x=>x.p!=null).sort((a,b)=>(b.near?1:0)-(a.near?1:0)||(b.ret??-999)-(a.ret??-999)).slice(0,8);box.innerHTML=rows.length?rows.map(x=>{const risk=leaderEtfRisk(x);return `<div class="card clickable ${risk.label==='추격주의'?'c-warn':x.near?'c-safe':x.ret>0?'c-info':'c-purple'}" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div class="card-label">${x.name}<span class="chip ${x.country==='KR'?'ch-b':'ch-g'}">${x.country}</span></div><div class="card-value sm">${fmtStockPrice(x.p,x.d?.currency||'USD')}</div><div class="card-sub"><span class="chip ${risk.chip}">${risk.label}</span>${x.near?`<span class="chip ch-p">${x.near}</span>`:''}${x.ret!=null?`<span>1년 ${fmtPct(x.ret)}</span>`:''}${x.dd!=null?ddChip(x.dd):''}</div><div class="mini-note" style="margin-top:8px">${risk.note}</div></div>`}).join(''):'<div class="card"><div class="card-label">주도 섹터 ETF</div><div class="card-sub">데이터 연결 대기</div></div>'}
+function renderLeaderEtfs(){const box=document.getElementById('leader-etfs');if(!box)return;const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)],p=d?.price??null,high=d?.high52w??getHistoryHigh(e.ticker),dd=drawdown(p,high),chg=d?.changePct??null,near=nearHighLabel(p,high),ret=historyReturn(e.ticker);return {...e,d,p,high,dd,chg,near,ret}}).filter(x=>x.p!=null).sort((a,b)=>(b.near?1:0)-(a.near?1:0)||(b.ret??-999)-(a.ret??-999)).slice(0,8);box.innerHTML=rows.length?rows.map(x=>{const risk=leaderEtfRisk(x);return `<div class="card leader-card clickable ${risk.label==='추격주의'?'c-warn':x.near?'c-safe':x.ret>0?'c-info':'c-purple'}" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div class="card-label">${x.name}<span class="chip ${x.country==='KR'?'ch-b':'ch-g'}">${x.country}</span></div><div class="card-value sm">${fmtStockPrice(x.p,x.d?.currency||'USD')}</div><div class="card-sub"><span class="chip ${risk.chip}">${risk.label}</span>${x.near?`<span class="chip ch-p">${x.near}</span>`:''}${x.ret!=null?`<span>1년 ${fmtPct(x.ret)}</span>`:''}${x.dd!=null?ddChip(x.dd):''}</div><div class="mini-note" style="margin-top:8px">${risk.note}</div></div>`}).join(''):'<div class="card"><div class="card-label">주도 섹터 ETF</div><div class="card-sub">데이터 연결 대기</div></div>'}
+function leaderEtfRisk(row){
+ const r1=periodReturn(row.ticker,21),r3=periodReturn(row.ticker,63);
+ if(row.near&&r1!=null&&r1>=8)return {chip:'ch-y',label:'추격주의',note:'최근 급등 뒤 신고가권입니다. 눌림과 거래량을 같이 봅니다.'};
+ if(row.near)return {chip:'ch-g',label:'주도섹터',note:'신고가권 섹터입니다. 신규 진입은 분할 기준을 먼저 정합니다.'};
+ if(r3!=null&&r3>8)return {chip:'ch-b',label:'상대강세',note:'최근 3개월 강세입니다. 신고가 돌파 여부를 관찰합니다.'};
+ return {chip:'ch-b',label:'관찰',note:'강한 신고가 신호는 아직 아닙니다.'};
+}
+function highWatchRows(){
+ return HIGH_WATCH.map(x=>{const d=live[x.ticker]||live[normalizeSymbol(x.ticker)],p=d?.price??null,high=d?.high52w??getHistoryHigh(x.ticker),gap=p&&high?(p/high-1)*100:null,near=nearHighLabel(p,high);return {...x,p,high,gap,near}}).filter(x=>x.near&&x.gap!=null&&x.gap>=-1.2);
+}
+function renderHighList(){
+ const box=document.getElementById('high-list-card');if(!box)return;
+ const rows=highWatchRows(),today=new Date(),date=`${today.getMonth()+1}/${today.getDate()}`;
+ if(!rows.length){box.innerHTML='<div class="high-report"><div class="high-report-title">🔥 주요 신고가 현황</div><div class="high-report-date">52주 신고가 포함</div>데이터 연결 대기 또는 신고가권 종목 없음</div>';return}
+ const groups=[...new Set(HIGH_WATCH.map(x=>x.group))],sep='─────────────';
+ const body=groups.map(g=>{const items=rows.filter(x=>x.group===g);if(!items.length)return '';return `${g}\n${items.map(x=>`${x.name} (${x.note})${x.gap>=0?' 🚀':''}`).join('\n')}`}).filter(Boolean).join(`\n${sep}\n`);
+ box.innerHTML=`<div class="high-report"><div class="high-report-title">🔥 주요 신고가 현황, ${date}</div><div class="high-report-date">*52주 신고가 포함 · 신고가권은 🚀 표시</div>${sep}\n${body}\n${sep}</div>`;
+}
 function renderKorea(){const el=document.getElementById('korea-indices');if(!el)return;el.innerHTML=''}
 function renderYield(){const y10=getPrice('y10'),y5=getPrice('y5'),y2=getPrice('y2'),spread=y10!=null&&y2!=null?y10-y2:null,inv=spread!=null&&spread<0;const row=(term,val)=>{if(val==null)return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:var(--muted)">—</div><div class="yield-bar-bg"></div></div>`;const s=yieldStatus(val),pct=Math.min(100,val/6*100),col=s.cls==='c-danger'?'var(--red)':s.cls==='c-warn'?'var(--yellow)':'var(--blue)';return `<div class="yield-row"><div class="yield-term">${term}</div><div class="yield-val" style="color:${col}">${val.toFixed(2)}%</div><div style="flex:1"><div class="yield-bar-bg"><div class="yield-bar-fill" style="width:${pct}%;background:${col}"></div></div></div><span class="chip ${s.chip}">${s.label}</span></div>`};document.getElementById('yield-card').innerHTML=`<div class="card-label">수익률 곡선 ${spread!=null?`<span class="chip ${inv?'ch-r':'ch-g'}">${inv?'역전':'정상'} ${spread>0?'+':''}${spread.toFixed(2)}%</span>`:''}</div>${row('10Y',y10)}${row('5Y',y5)}${row('2Y',y2)}${y10!=null?tbar(y10,0,6,[{v:3,label:'3%'},{v:4,label:'4%'},{v:4.5,label:'4.5%'}],yieldStatus):''}`}
 function renderSentiment(){const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg):{label:'불러오는 중',color:'var(--muted)',chip:'ch-b'};document.getElementById('fg-val').textContent=fg!=null?Math.round(fg):'—';document.getElementById('fg-val').style.color=fgs.color;document.getElementById('fg-lbl').textContent='';if(fg!=null){const arc=204,fill=fg/100*arc;document.getElementById('gFill').setAttribute('stroke-dasharray',`${fill} ${arc-fill}`);document.getElementById('gNeedle').setAttribute('transform',`rotate(${-90+fg/100*180},80,80)`)}const vix=getPrice('vix'),vs=vix!=null?vixStatus(vix):{chip:'ch-b',label:'—'};document.getElementById('vix-row').innerHTML=`<div class="card-sub" style="justify-content:center;margin-bottom:10px"><span class="chip ${fgs.chip}">${fgs.label}</span>${fg!=null&&fg<10?'<span>분할매수 후보 구간</span>':''}</div><div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">VIX</span><span style="font-size:24px;font-weight:900">${vix!=null?fmt(vix,1):'—'}</span><span class="chip ${vs.chip}">${vs.label}</span></div>${vix!=null?tbar(vix,0,50,[{v:15,label:'안정'},{v:20,label:'주의'},{v:30,label:'위험'}],vixStatus):''}${fg!=null&&fg<10?'<div class="card-sub" style="margin-top:16px"><span class="chip ch-r">한자리수 공포</span><span>분할매수 후보 구간</span></div>':''}`}
@@ -639,6 +681,10 @@ function expertScore(symbol,price,item={}){
  const confidence=Math.round(avail/100*100),grade=score==null?'대기':score>=80?'A':score>=65?'B':score>=50?'C':score>=35?'D':'E';
  return {score,grade,confidence,areas,rsi,stoch,bb,vr,ichi,rs:avgNums(rsVals),ma5,ma20,ma50,ma200};
 }
+function scorePanelHtml(score){
+ const color=score.grade==='A'?'var(--green)':score.grade==='B'?'var(--blue)':score.grade==='C'?'var(--yellow)':score.grade==='D'?'var(--orange)':'var(--red)';
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">기술적 주도주 평가</div><span class="chip ${score.score>=65?'ch-g':score.score>=50?'ch-y':'ch-r'}">${score.grade}</span></div><div class="mini-value" style="color:${color}">${score.score??'—'}<span style="font-size:13px;color:var(--muted)"> / 100</span></div><div class="mini-note">신고가 근접, 추세, 상대강도, 거래량을 중심으로 봅니다. 신뢰도 ${score.confidence??0}% · 데이터 없는 항목은 0점 처리하지 않습니다.</div>${score.areas.map(a=>{const pct=a.avail?Math.round(a.got/a.avail*100):0;return `<div style="margin-top:8px"><div class="mini-chart-head"><span>${a.name}${a.provisional?' · 임시':''}</span><strong>${a.avail?`${pct}`:'대기'}</strong></div><div class="tbar" style="margin-top:5px"><div class="tbar-fill" style="width:${pct}%;background:${pct>=70?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'}"></div></div><div class="mini-note">${a.reasons.slice(0,2).join(' · ')||'데이터 대기'}</div></div>`}).join('')}</div>`;
+}
 function scoreAction(score){
  const s=score.score;
  if(s==null)return {cls:'info',chip:'ch-b',label:'데이터 대기',note:'가격·거래량 데이터가 충분히 쌓인 뒤 판단합니다.'};
@@ -656,6 +702,11 @@ function indicatorPanelHtml(score){
  const rsiChip=score.rsi==null?'ch-b':score.rsi>=75?'ch-r':score.rsi>=70?'ch-y':score.rsi<=30?'ch-b':'ch-g';
  const rsiLabel=score.rsi==null?'대기':score.rsi>=75?'단기 과열':score.rsi>=70?'강세':score.rsi<=30?'침체':'중립';
  return `<div class="grid g4" style="margin-top:10px"><div class="mini-card"><div class="mini-title">RSI(14)</div><div class="mini-value">${score.rsi!=null?fmt(score.rsi,1):'—'}</div><span class="chip ${rsiChip}">${rsiLabel}</span></div><div class="mini-card"><div class="mini-title">스토캐스틱</div><div class="mini-value">${score.stoch!=null?fmt(score.stoch,1):'—'}</div><div class="mini-note">저점권에서 상승 전환 여부 확인</div></div><div class="mini-card"><div class="mini-title">거래량</div><div class="mini-value">${score.vr!=null?score.vr.toFixed(1)+'배':'—'}</div><div class="mini-note">평균 대비 3배 이상이면 강한 관심, 10배는 별도 확인</div></div><div class="mini-card"><div class="mini-title">BB / 일목</div><div class="mini-value" style="font-size:18px">${score.bb.ratio!=null?Math.round(score.bb.ratio*100)+'%':'—'}</div><div class="mini-note">${score.ichi.note}</div></div></div>`;
+}
+function fibPanelHtml(points){
+ const vals=(points||[]).map(p=>p.close).filter(Number.isFinite),last=lastPoint(points)?.close;if(vals.length<2||last==null)return '';
+ const hi=Math.max(...vals),lo=Math.min(...vals),levels=[0,.236,.382,.5,.618,.786,1].map(r=>({r,price:hi-(hi-lo)*r}));
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">피보나치 되돌림</div><span class="chip ch-b">분할 기준</span></div><div class="mini-note">매수신호가 아니라 가격대를 나눠보는 도구입니다.</div><div class="rank-list">${levels.map(x=>`<div class="rank-item ${Math.abs(last/x.price-1)<.015?'hot':''}"><span>${Math.round(x.r*100)}%</span><strong>${fmt(x.price,2)}</strong></div>`).join('')}</div></div>`;
 }
 function fibPanelHtml(points){
  const vals=(points||[]).map(p=>p.close).filter(Number.isFinite),last=lastPoint(points)?.close;if(vals.length<2||last==null)return '';
@@ -763,6 +814,11 @@ function earningsSeasonInfo(){
  const dd=Math.ceil((next-now)/86400000);
  return current?{active:true,label:'실적 시즌',note:'미국 실적 발표가 집중되는 구간입니다. 변동성 확대 가능성을 같이 봅니다.'}:{active:false,label:`D-${dd}`,note:`다음 미국 실적 시즌 예상 시작: ${next.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})}`};
 }
+function earningsSeasonCard(){
+ const e=earningsSeasonInfo(),now=new Date(),cur=now.getMonth()+1,seasonMonths=new Set([1,4,7,10]),preMonths=new Set([3,6,9,12]);
+ const months=Array.from({length:12},(_,i)=>i+1).map(m=>{const active=seasonMonths.has(m),pre=preMonths.has(m),cls=m===cur?(active?'ch-y':pre?'ch-b':'ch-g'):(active?'ch-y':pre?'ch-b':'ch-g'),txt=active?'실적':pre?'준비':'비시즌';return `<div class="stage ${m===cur?'on':''}" style="min-height:54px"><div>${m}월</div><strong>${txt}</strong></div>`}).join('');
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌 캘린더</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="stage-grid" style="grid-template-columns:repeat(4,1fr)">${months}</div><div class="mini-note" style="margin-top:8px">${e.note} 1·4·7·10월 중순부터 약 한 달을 실적 시즌으로 봅니다.</div></div>`;
+}
 function buyPlanCard(){
  const items=[['S&P 500','sp'],['나스닥','nasdaq'],['코스피','kospi'],['코스닥','kosdaq']].map(([label,key])=>{const p=getPrice(key),dd=drawdown(p,getHigh52(key,null));let stage='대기',cls='';if(dd!=null){if(dd<=-40){stage='3차';cls='buy'}else if(dd<=-30){stage='2차';cls='buy'}else if(dd<=-20){stage='1차';cls='buy'}else if(dd<=-10){stage='조정';cls='warn'}else{stage='관망';cls='on'}}return {label,dd,stage,cls}});
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">분할매수 구간</div><span class="chip ch-b">52주 고점 기준</span></div><div class="stage-grid">${items.map(x=>`<div class="stage ${x.cls}"><div>${x.label}</div><strong>${x.stage}</strong><br>${x.dd!=null?x.dd.toFixed(1)+'%':'—'}</div>`).join('')}</div><div class="mini-note" style="margin-top:8px">-20% 1차 · -30% 2차 · -40% 3차 후보로만 표시합니다.</div></div>`;
@@ -792,9 +848,13 @@ function riskChartsCard(){
   : miniSparkCard('HYG 대체 지표',hyg!=null?fmtStockPrice(hyg,'USD'):'—',hygSeries,'var(--blue)',hygDd!=null?`FRED 미연결 시 HYG 가격으로 신용위험 대체 관찰 · 고점대비 ${hygDd.toFixed(1)}%`:'FRED 미연결 시 HYG 가격으로 대체 관찰');
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">신용/변동성 그래프</div><span class="chip ${hy?.series?.length?'ch-b':'ch-y'}">${hy?.series?.length?'FRED':'HYG 대체'}</span></div><div style="display:grid;gap:8px">${miniSparkCard('VIX',vix!=null?fmt(vix,1):'—',historyData['^VIX'],'var(--red)')}${miniSparkCard('MOVE',move!=null?fmt(move,0):'—',historyData['^MOVE'],'var(--yellow)')}${creditChart}</div></div>`;
 }
-function renderSignalPanels(){
+function renderSignalPanelsOld(){
  const box=document.getElementById('signalPanels');if(!box)return;const e=earningsSeasonInfo();
  box.innerHTML=`<div class="mini-card"><div class="mini-head"><div class="mini-title">미국 실적 시즌</div><span class="chip ${e.active?'ch-y':'ch-g'}">${e.label}</span></div><div class="mini-note">${e.note}</div></div>${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
+}
+function renderSignalPanels(){
+ const box=document.getElementById('signalPanels');if(!box)return;
+ box.innerHTML=`${earningsSeasonCard()}${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}`;
 }
 function signalItems(){const v=getPrice('vix'),y10=getPrice('y10'),uk=getPrice('usdkrw'),dxy=getPrice('dxy'),jpy=getPrice('usdjpy'),fg=getFearGreed(),y2=getPrice('y2'),trend=marketTrendProfile(),items=[];if(fg!=null&&fg<refs.fg_extreme)items.push(['buy','한자리수 공포','Fear & Greed가 극단 공포 기준 아래입니다. 역발상 후보를 압축하되, 추세와 신용위험이 안정되는지 확인합니다.']);else if(fg!=null&&fg<=refs.fg_fear)items.push(['safe','극도 공포','공포가 충분히 커진 구간입니다. 관심 종목을 한 번에 사기보다 가격대를 나눠 보는 시나리오가 어울립니다.']);[['S&P',SYM.sp],['나스닥',SYM.nasdaq],['코스피',SYM.kospi]].forEach(([name,sym])=>{const r=rsiValue(chartDataFor(sym));if(r>=75)items.push(['warn',`${name} RSI 단기 과열`,`RSI ${fmt(r,1)}입니다. 추세장이면 더 갈 수 있지만 추격매수보다 눌림목을 기다립니다.`]);else if(r<=30)items.push(['safe',`${name} RSI 단기 침체`,`RSI ${fmt(r,1)}입니다. 매수 후보는 될 수 있지만 50일선 회복과 거래량을 같이 확인합니다.`])});if(trend.chip==='ch-r')items.push(['danger','200일선 이탈 점검','S&P 또는 나스닥이 장기 추세선 아래입니다. 반등이 나와도 기술적 회복 확인 전까지 포지션 크기를 보수적으로 봅니다.']);else if(trend.chip==='ch-y')items.push(['warn','50일선/회복 확인','단기 추세가 흔들렸거나 회복 확인이 필요한 구간입니다. 신규 진입은 분할과 손절 기준을 먼저 정합니다.']);if(v!=null&&v>=refs.vix_risk)items.push(['danger',`VIX ${refs.vix_risk} 이상`,'시장 불안이 급격히 커진 상태입니다. 공포 매수는 가능하지만 레버리지와 몰빵은 위험합니다.']);else if(v!=null&&v>=refs.vix_warn)items.push(['warn',`VIX ${refs.vix_warn} 이상`,'변동성 주의 구간입니다. 신규 진입은 종목별 고점대비 하락률과 실적을 같이 보세요.']);if(y10!=null&&y10>=refs.y10_risk)items.push(['danger',`10년물 ${refs.y10_risk}% 이상`,'금리 부담이 큰 구간입니다. 지수와 성장주의 변동성 확대 가능성을 같이 봅니다.']);else if(y10!=null&&y10>=refs.y10_warn)items.push(['warn',`10년물 ${refs.y10_warn}% 이상`,'금리 부담이 남아 있습니다. 환율, 달러지수, 변동성 지표를 함께 확인합니다.']);if(y10!=null&&y2!=null&&y10-y2<0)items.push(['warn','장단기 금리 역전','경기 둔화 선행 신호입니다. 방어주와 현금흐름 좋은 기업도 같이 봅니다.']);if(uk!=null&&uk>=refs.usdkrw_risk)items.push(['warn',`원달러 ${refs.usdkrw_risk}원 이상`,'원화 약세 구간입니다. 한국 내수주보다 달러 매출 또는 미국 자산 비중을 점검합니다.']);if(dxy!=null&&dxy>=refs.dxy_risk)items.push(['warn',`달러지수 ${refs.dxy_risk} 이상`,'강달러는 위험자산에 부담입니다. 신흥국과 원자재 민감 자산은 보수적으로 봅니다.']);if(jpy!=null&&jpy>=(refs.jpy_sig||180))items.push(['safe','USD/JPY 극단 구간','엔화 약세가 극단으로 간 구간은 과거 위험자산 바닥권 신호로 관찰됩니다.']);if(!items.length)items.push(['info','주요 경계값 이내','강한 역발상 신호는 없습니다. 현금, 분할매수 가격, 관심 종목 리스트를 미리 정리하는 구간입니다.']);return items}
 function renderAlerts(){const cls={danger:'al-danger',warn:'al-warn',safe:'al-safe',info:'al-info',buy:'al-buy'};document.getElementById('alertList').innerHTML=signalItems().slice(0,5).map(([t,h,m])=>`<div class="alert-item ${cls[t]||'al-info'}"><span><strong>${h}</strong> — ${m}</span></div>`).join('')}
@@ -833,6 +893,15 @@ function closeChartModal(){document.getElementById('chartModal').classList.remov
 document.getElementById('chartModal').addEventListener('click',e=>{if(e.target===document.getElementById('chartModal'))closeChartModal()});
 function chartDataFor(symbol){return historyData[symbol]||historyData[normalizeSymbol(symbol)]||[]}
 function isIndividualEquity(symbol){return /^[A-Z0-9.-]+(\.KS|\.KQ)?$/i.test(symbol)&&!['HYG','SOXX','BTC-USD'].includes(symbol)}
+function renderChartModal(label,symbol,price,chg,currency='USD'){
+ const pts=chartDataFor(symbol),path=linePath(pts,320,180,12),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=pts.map(p=>p.close).filter(Number.isFinite),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=pts.find(x=>Number.isFinite(x.close))?.close,lastPt=lastPoint(pts),last=lastPt?.close,ret=first&&last?((last-first)/first*100):null,dd=drawdown(price,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{},pe=item.forwardPE||item.trailingPE,growth=item.earningsGrowth??item.revenueGrowth;
+ const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—');
+ const score=expertScore(symbol,price,item),range=vals.length?[low,high]:null,closePath=linePathRange(pts,320,180,12,range),ma50Path=linePathRange(movingSeries(pts,50),320,180,12,range),ma200Path=linePathRange(movingSeries(pts,200),320,180,12,range);
+ const stockDetails=isIndividualEquity(symbol)
+  ? `<div class="mini-card"><div class="mini-title">밸류에이션</div><div class="mini-value">${pe?fmt(pe,1):'—'}</div><div class="mini-note">${item.forwardPE?'Forward PER':item.trailingPE?'Trailing PER':'개별 종목 PER 데이터 대기'}</div></div><div class="mini-card"><div class="mini-title">성장률</div><div class="mini-value">${growth!=null?fmtPct(growth*100):'—'}</div><div class="mini-note">${item.earningsGrowth!=null?'이익 성장률':item.revenueGrowth!=null?'매출 성장률':'실적 데이터 대기'}</div></div>`
+  : `<div class="mini-card"><div class="mini-title">1차 경고</div><div class="mini-value" style="font-size:18px">50일선 이탈</div><div class="mini-note">최근까지 지지하던 단기 추세 이탈 여부를 봅니다.</div></div><div class="mini-card"><div class="mini-title">2차/3차 경고</div><div class="mini-value" style="font-size:18px">200일선 확인</div><div class="mini-note">200일선 이탈 또는 회복 실패는 장기 추세 훼손으로 봅니다.</div></div>`;
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol} · 최근 1년${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${scorePanelHtml(score)}${indicatorPanelHtml(score)}<div class="grid g3" style="margin-top:12px"><div class="mini-card"><div class="mini-title">1년 고점</div><div class="mini-value">${high!=null?fmt(high,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 저점</div><div class="mini-value">${low!=null?fmt(low,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 수익률</div><div class="mini-value" style="color:${ret!=null?(ret>=0?'var(--red)':'var(--blue)'):'var(--muted)'}">${ret!=null?fmtPct(ret):'—'}</div></div></div><div class="grid g3" style="margin-top:10px"><div class="mini-card"><div class="mini-title">추세 상태</div><div class="mini-value" style="font-size:18px">${tech.label}</div><div class="mini-note">${tech.note}</div></div>${stockDetails}</div>${fibPanelHtml(pts)}`;
+}
 function renderChartModal(label,symbol,price,chg,currency='USD'){
  const pts=chartDataFor(symbol),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=pts.map(p=>p.close).filter(Number.isFinite),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=pts.find(x=>Number.isFinite(x.close))?.close,lastPt=lastPoint(pts),last=lastPt?.close,ret=first&&last?((last/first-1)*100):null,dd=drawdown(price??last,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{},score=expertScore(symbol,price,item),action=scoreAction(score),quality=stockQualitySummary(item);
  const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—');
