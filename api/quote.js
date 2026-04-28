@@ -105,6 +105,7 @@ async function fetchNaverSummary(symbol) {
     const per = Number(data.per);
     const eps = Number(data.eps);
     const pbr = Number(data.pbr);
+    const finance = await fetchNaverFinance(code);
     return {
       symbol,
       regularMarketPrice: Number.isFinite(now) ? now : null,
@@ -119,9 +120,79 @@ async function fetchNaverSummary(symbol) {
       trailingEps: Number.isFinite(eps) ? eps : null,
       forwardEps: null,
       priceToBook: Number.isFinite(pbr) && pbr > 0 ? pbr : null,
+      priceToSalesTrailing12Months: finance.priceToSalesTrailing12Months,
+      earningsQuarterlyGrowth: finance.earningsGrowth,
+      revenueGrowth: finance.revenueGrowth,
+      operatingIncomeGrowth: finance.earningsGrowth,
+      revenueLatest: finance.revenueLatest,
+      operatingIncomeLatest: finance.operatingIncomeLatest,
     };
   } catch {
     return null;
+  }
+}
+
+function naverNumber(value) {
+  if (value == null || value === '-' || value === '') return null;
+  const n = Number(String(value).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function naverFinanceRow(rows, title) {
+  return rows.find((r) => String(r.title || '').replace(/\s/g, '').includes(title));
+}
+
+function valuesByActualPeriod(finance, rowTitle) {
+  const titles = finance?.financeInfo?.trTitleList || [];
+  const row = naverFinanceRow(finance?.financeInfo?.rowList || [], rowTitle);
+  if (!row) return [];
+  return titles
+    .filter((t) => t.isConsensus !== 'Y')
+    .map((t) => ({ key: t.key, value: naverNumber(row.columns?.[t.key]?.value) }))
+    .filter((x) => x.value != null)
+    .sort((a, b) => String(a.key).localeCompare(String(b.key)));
+}
+
+function growthFrom(values) {
+  if (!values || values.length < 2) return null;
+  const prev = values.at(-2).value;
+  const last = values.at(-1).value;
+  if (!Number.isFinite(prev) || !prev || !Number.isFinite(last)) return null;
+  return (last - prev) / Math.abs(prev);
+}
+
+async function fetchNaverFinance(code) {
+  const empty = {
+    revenueGrowth: null,
+    earningsGrowth: null,
+    priceToSalesTrailing12Months: null,
+    revenueLatest: null,
+    operatingIncomeLatest: null,
+  };
+  try {
+    const url = `https://m.stock.naver.com/api/stock/${code}/finance/annual`;
+    const res = await fetch(url, {
+      headers: {
+        accept: 'application/json,text/plain,*/*',
+        referer: `https://m.stock.naver.com/domestic/stock/${code}/finance`,
+        'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
+      },
+    });
+    if (!res.ok) return empty;
+    const data = await res.json();
+    const revenues = valuesByActualPeriod(data, '매출액');
+    const profits = valuesByActualPeriod(data, '영업이익');
+    const revenueLatest = revenues.at(-1)?.value ?? null;
+    const operatingIncomeLatest = profits.at(-1)?.value ?? null;
+    return {
+      revenueGrowth: growthFrom(revenues),
+      earningsGrowth: growthFrom(profits),
+      priceToSalesTrailing12Months: null,
+      revenueLatest,
+      operatingIncomeLatest,
+    };
+  } catch {
+    return empty;
   }
 }
 
@@ -134,6 +205,8 @@ async function enrichKoreanQuotes(rows, symbols) {
     row.trailingEps = null;
     row.forwardEps = null;
     row.priceToSalesTrailing12Months = null;
+    row.earningsQuarterlyGrowth = null;
+    row.revenueGrowth = null;
   });
   const rowByCode = new Map(out.map((r) => [koreanCode(r.symbol), r]).filter(([code]) => code));
   const targets = [...new Set(symbols.map(koreanCode).filter(Boolean))].slice(0, 40);
@@ -146,7 +219,7 @@ async function enrichKoreanQuotes(rows, symbols) {
       if (row) {
         Object.entries(s.value).forEach(([k, v]) => {
           if (v == null || v === '') return;
-          if (['trailingPE', 'trailingEps', 'priceToBook', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
+          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenueLatest', 'operatingIncomeLatest', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
           else if (row[k] == null || row[k] === '') row[k] = v;
         });
         row.currency = 'KRW';

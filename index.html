@@ -434,7 +434,7 @@ function ingestQuoteRows(rows){
  (rows||[]).forEach(q=>{
    if(q.regularMarketPrice==null)return;
    const keys=[q.symbol,normalizeSymbol(q.symbol)].filter(Boolean);
-   const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol,trailingPE:q.trailingPE??null,forwardPE:q.forwardPE??null,priceToSales:q.priceToSalesTrailing12Months??null,trailingEps:q.trailingEps??null,forwardEps:q.forwardEps??null,earningsGrowth:q.earningsQuarterlyGrowth??null,revenueGrowth:q.revenueGrowth??null};
+   const item={price:q.regularMarketPrice,high52w:q.fiftyTwoWeekHigh||null,low52w:q.fiftyTwoWeekLow||null,changePct:q.regularMarketChangePercent??(q.regularMarketPreviousClose?((q.regularMarketPrice-q.regularMarketPreviousClose)/q.regularMarketPreviousClose*100):null),currency:q.currency||'USD',name:q.shortName||q.symbol,trailingPE:q.trailingPE??null,forwardPE:q.forwardPE??null,priceToSales:q.priceToSalesTrailing12Months??null,priceToBook:q.priceToBook??null,trailingEps:q.trailingEps??null,forwardEps:q.forwardEps??null,earningsGrowth:q.earningsQuarterlyGrowth??q.operatingIncomeGrowth??null,revenueGrowth:q.revenueGrowth??null,revenueLatest:q.revenueLatest??null,operatingIncomeLatest:q.operatingIncomeLatest??null};
    keys.forEach(k=>live[k]=item);
    count++;
  });
@@ -1201,6 +1201,44 @@ function renderRiskChecklist(){
 function renderSignalPanels(){
  const box=document.getElementById('signalPanels');if(!box)return;
  box.innerHTML=`${earningsSeasonCard()}${buyPlanCard()}${kimchiCard()}${cashSentimentCard()}${predictionCard()}`;
+}
+function valuationPanelHtml(symbol,item={}){
+ const d=item||live[symbol]||live[normalizeSymbol(symbol)]||{},isKr=/^\d{6}(\.KS|\.KQ)?$/i.test(symbol)||d.currency==='KRW';
+ const pe=d.forwardPE??d.trailingPE??null,eps=d.forwardEps??d.trailingEps??null,pbr=d.priceToBook??null,ps=d.priceToSales??null,opGrowth=d.earningsGrowth??null,revGrowth=d.revenueGrowth??null;
+ const primaryGrowth=opGrowth??revGrowth;
+ const growthLabel=primaryGrowth==null?'미제공':primaryGrowth>0.15?'개선':primaryGrowth>0?'완만':primaryGrowth>-0.1?'둔화':'악화';
+ const val4=isKr
+  ? `<div class="check-card"><div class="check-title">PBR</div><div class="check-value">${pbr!=null?fmt(pbr,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">Naver 기준</div></div>`
+  : `<div class="check-card"><div class="check-title">P/S</div><div class="check-value">${ps!=null?fmt(ps,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">Yahoo 기준</div></div>`;
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${primaryGrowth==null?'ch-b':primaryGrowth>0.15?'ch-g':primaryGrowth>0?'ch-b':primaryGrowth>-0.1?'ch-y':'ch-r'}">${growthLabel}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">PER</div><div class="check-value">${pe!=null?fmt(pe,1):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver':d.forwardPE?'Forward':d.trailingPE?'Trailing':'공급원 미제공'}</div></div><div class="check-card"><div class="check-title">EPS</div><div class="check-value">${eps!=null?fmt(eps,2):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${isKr?'Naver':d.forwardEps?'Forward':d.trailingEps?'Trailing':'공급원 미제공'}</div></div>${val4}<div class="check-card"><div class="check-title">${isKr?'영업익 성장률':'성장률'}</div><div class="check-value">${primaryGrowth!=null?fmtPct(primaryGrowth*100):'<span style="color:var(--muted)">미제공</span>'}</div><div class="check-note">${opGrowth!=null?'영업이익 YoY':revGrowth!=null?'매출 YoY':'재무 데이터 미제공'}</div></div></div>${revGrowth!=null&&opGrowth!=null?`<div class="mini-note" style="margin-top:8px">매출 성장률 ${fmtPct(revGrowth*100)} · 영업이익 성장률 ${fmtPct(opGrowth*100)}</div>`:''}</div>`;
+}
+function technicalDeepChecks(symbol,price){
+ const rows=chartDataFor(symbol).filter(p=>Number.isFinite(p.close)),last=price??lastPoint(rows)?.close,lastRow=rows.at(-1),prevRow=rows.at(-2),cloud=cloudPoint(rows),prevCloud=cloudPoint(rows.slice(0,-1)),cloud5=cloudPoint(rows.slice(0,-5)),bb=bollingerProfile(rows),ma20=movingAverage(rows,20),ma20Prev=movingAverage(rows.slice(0,-5),20),recentHigh60=rows.length>20?Math.max(...rows.slice(-61,-1).map(p=>Number.isFinite(p.high)?p.high:p.close).filter(Number.isFinite)):null;
+ const candle=lastRow&&Number.isFinite(lastRow.open)&&Number.isFinite(lastRow.high)&&Number.isFinite(lastRow.low)&&lastRow.close>lastRow.open&&lastRow.close>=lastRow.low+(lastRow.high-lastRow.low)*.6;
+ const cloudBreak=last&&prevRow&&cloud&&prevCloud?prevRow.close<=prevCloud.top&&last>cloud.top:null;
+ const frontCloudBull=cloud&&cloud5?cloud.diff>0||Math.abs(cloud.diff)<Math.abs(last||1)*.015&&cloud.diff>cloud5.diff:null;
+ const upperRoom=last&&bb.upper?(bb.upper-last)/last*100:null,bbFail=lastRow&&bb.upper?((Number.isFinite(lastRow.high)?lastRow.high:lastRow.close)>=bb.upper&&lastRow.close<bb.upper&&lastRow.close<lastRow.open):null;
+ const pullbackTurn=last&&recentHigh60&&ma20&&ma20Prev?(last/recentHigh60-1)*100<=-8&&last>ma20&&ma20>ma20Prev:null;
+ return [
+  ['양봉+구름 돌파',candle&&cloudBreak,cloud==null?'일목 52일 데이터 필요':'양봉과 구름 상단 돌파 동시 확인'],
+  ['앞구름 양전환',frontCloudBull,cloud==null?'일목 52일 데이터 필요':'선행스팬 A/B 개선 여부'],
+  ['볼린저 상단 여유',upperRoom!=null&&!bbFail&&upperRoom>=2,upperRoom!=null?`상단까지 ${fmt(upperRoom,1)}%`:'20일 데이터 필요'],
+  ['전고점 조정 후 회복',pullbackTurn,recentHigh60!=null?'60일 고점 조정 후 20일선 회복':'60일 데이터 필요']
+ ];
+}
+function chartMasterChecklistHtml(symbol,score,price){
+ const pts=chartDataFor(symbol),last=price??lastPoint(pts)?.close,ma20=movingAverage(pts,20),ma50=movingAverage(pts,50),ma200=movingAverage(pts,200),hi=getHistoryHigh(symbol),vr=volumeRatio(pts),rsi=rsiValue(pts),highGap=last&&hi?(last/hi-1)*100:null;
+ const basic=[
+  ['200일선 위',last!=null&&ma200!=null?last>ma200:null,ma200?fmt(ma200,2):'200일 데이터 필요'],
+  ['50일선 위',last!=null&&ma50!=null?last>ma50:null,ma50?fmt(ma50,2):'50일 데이터 필요'],
+  ['20일선 위',last!=null&&ma20!=null?last>ma20:null,ma20?fmt(ma20,2):'20일 데이터 필요'],
+  ['52주 고점 -10% 이내',highGap!=null?highGap>=-10:null,highGap!=null?fmtPct(highGap):'고점 데이터 필요'],
+  ['거래량 1.2배 이상',vr!=null?vr>=1.2:null,vr!=null?`${fmt(vr,1)}배`:'거래량 데이터 필요'],
+  ['RSI 75 미만',rsi!=null?rsi<75:null,rsi!=null?`RSI ${fmt(rsi,1)}`:'RSI 데이터 필요']
+ ];
+ const deep=technicalDeepChecks(symbol,price);
+ const rows=[...basic,...deep],known=rows.filter(r=>r[1]!=null),pass=known.filter(r=>r[1]).length,ratio=known.length?Math.round(pass/known.length*100):null,chip=ratio==null?'ch-b':ratio>=70?'ch-g':ratio>=50?'ch-y':'ch-r';
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 O/X</div><span class="chip ${chip}">${ratio??'—'}${ratio!=null?'/100':''}</span></div><div class="mini-note">OHLCV로 계산 가능한 추세, 거래량, RSI, 일목, 볼린저, 전고점 회복을 자동 판정합니다. 증권앱의 화살표 자체가 아니라 같은 의미의 조건으로 대체합니다.</div><div class="rank-list">${rows.map(([name,ok,note])=>`<div class="rank-item"><span><span class="chip ${ok==null?'ch-b':ok?'ch-g':'ch-r'}" style="margin-right:6px">${ok==null?'대기':ok?'O':'X'}</span>${name}</span><strong>${note}</strong></div>`).join('')}</div></div>`;
 }
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);
