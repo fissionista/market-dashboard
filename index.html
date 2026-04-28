@@ -241,7 +241,7 @@ input:focus,select:focus{border-color:var(--blue)}
 <div class="modal-overlay" id="chartModal">
   <div class="modal chart-modal">
     <div id="chartModalBody"></div>
-    <div class="modal-actions"><button class="btn" onclick="closeChartModal()">닫기</button></div>
+    <div class="modal-actions"><button class="btn btn-green" onclick="captureChartModal()">종목 캡쳐</button><button class="btn" onclick="closeChartModal()">닫기</button></div>
   </div>
 </div>
 
@@ -388,15 +388,37 @@ async function fetchYahooProxyBatch(symbols){
  for(const r of settled){if(r.status==='fulfilled'&&r.value.length)return r.value}
  return [];
 }
+function hasFundamentals(rows){
+ return (rows||[]).some(r=>r&&['trailingPE','forwardPE','priceToSalesTrailing12Months','trailingEps','forwardEps','earningsQuarterlyGrowth','revenueGrowth'].some(k=>r[k]!=null&&r[k]!==''));
+}
+function mergeQuoteRows(...groups){
+ const map=new Map();
+ groups.flat().filter(Boolean).forEach(row=>{
+   const key=normalizeSymbol(row.symbol);
+   if(!key)return;
+   const prev=map.get(key)||{};
+   const merged={...prev};
+   Object.entries(row).forEach(([k,v])=>{if(v!=null&&v!==''&&(merged[k]==null||merged[k]===''))merged[k]=v});
+   if(row.symbol)merged.symbol=row.symbol;
+   if(row.shortName)merged.shortName=row.shortName;
+   if(row.currency)merged.currency=row.currency;
+   map.set(key,merged);
+ });
+ return [...map.values()];
+}
 async function fetchQuoteBatch(symbols){
  const appRows=await fetchAppApiBatch(symbols);
- if(appRows.length)return appRows;
- const providers=settings.provider==='alphavantage'?['alpha','stooq','yahoo']:['stooq','alpha','yahoo'];
+ if(appRows.length&&hasFundamentals(appRows))return appRows;
+ const yahooRows=await fetchYahooProxyBatch(symbols);
+ if(appRows.length||yahooRows.length)return mergeQuoteRows(appRows,yahooRows);
+ const providers=settings.provider==='alphavantage'?['alpha','stooq']:['stooq','alpha'];
+ const fallbackRows=[];
  for(const provider of providers){
-   const rows=provider==='stooq'?await fetchStooqBatch(symbols):provider==='alpha'?await fetchAlphaBatch(symbols):await fetchYahooProxyBatch(symbols);
-   if(rows.length)return rows;
+   const rows=provider==='stooq'?await fetchStooqBatch(symbols):await fetchAlphaBatch(symbols);
+   fallbackRows.push(...rows);
+   if(rows.length)break;
  }
- return [];
+ return mergeQuoteRows(fallbackRows);
 }
 async function fetchAppApiBatch(symbols){
  if(location.protocol==='file:')return [];
@@ -551,7 +573,7 @@ function normalizeSymbol(sym){return String(sym||'').toUpperCase().replace(/\.(K
 function getLive(key){const sym=SYM[key]||key;return live[sym]||live[normalizeSymbol(sym)]||null}
 function getPrice(key){return getLive(key)?.price??manual[key]??null}
 function getChangePct(key){return getLive(key)?.changePct??null}
-function getHistoryHigh(sym){const pts=historyData[sym]||historyData[normalizeSymbol(sym)]||[];const vals=pts.map(p=>p.close).filter(Number.isFinite);return vals.length?Math.max(...vals):null}
+function getHistoryHigh(sym){const pts=historyData[sym]||historyData[normalizeSymbol(sym)]||[];const vals=pts.map(p=>Number.isFinite(p.high)?p.high:p.close).filter(Number.isFinite);return vals.length?Math.max(...vals):null}
 function applyHistoryHighs(){Object.entries(SYM).forEach(([key,sym])=>{const h=getHistoryHigh(sym),item=getLive(key);if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)});Object.keys(live).forEach(sym=>{const h=getHistoryHigh(sym),item=live[sym];if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)})}
 function getHigh52(key,refKey){const sym=SYM[key]||key;return getLive(key)?.high52w??getHistoryHigh(sym)??refs[refKey]??null}
 function getFearGreed(){return manual.fg??fearGreed?.score??null}
@@ -925,6 +947,7 @@ function renderHistory(){document.getElementById('histBody').innerHTML=snapshots
 function clearHistory(){if(confirm('기록을 모두 삭제하시겠습니까?')){snapshots=[];save();renderHistory()}}
 function loadCaptureLib(){return new Promise((resolve,reject)=>{if(window.html2canvas)return resolve(window.html2canvas);const s=document.createElement('script');s.src=CAPTURE_LIB;s.onload=()=>resolve(window.html2canvas);s.onerror=reject;document.head.appendChild(s)})}
 async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#f4f7fb',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
+async function captureChartModal(){const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');try{setStatus('load','종목 캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:target.scrollWidth,windowHeight:target.scrollHeight});const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim();const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob)throw new Error('blob failed');const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','종목 캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','종목 캡쳐 생성 완료')},'image/png')}catch(e){setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 function buildManualFields(){document.getElementById('manualFields').innerHTML=MANUAL_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" id="m_${k}" step="0.01" placeholder="현재값"></div>`).join('')}
 function buildThresholdFields(){document.getElementById('thresholdFields').innerHTML=THRESHOLD_FIELDS.map(([k,l,u])=>`<div class="field"><label>${l}${u?` (${u})`:''}</label><input type="number" id="r_${k}" step="0.01" placeholder="${DEFAULT_REFS[k]??''}"></div>`).join('')}
 function closeModal(){document.getElementById('editModal').classList.remove('open')}
@@ -1004,6 +1027,20 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
  document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol} · 최근 1년${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.8" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${scorePanelHtml(score)}${chartMasterChecklistHtml(symbol,score,price)}${businessPanel}${riskPanel}${indicatorPanelHtml(score)}<div class="grid g3" style="margin-top:12px"><div class="mini-card"><div class="mini-title">1년 고점</div><div class="mini-value">${high!=null?fmt(high,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 저점</div><div class="mini-value">${low!=null?fmt(low,2):'—'}</div></div><div class="mini-card"><div class="mini-title">1년 수익률</div><div class="mini-value" style="color:${ret!=null?(ret>=0?'var(--red)':'var(--blue)'):'var(--muted)'}">${ret!=null?fmtPct(ret):'—'}</div></div></div><div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts)}`;
 }
 function checkMark(status){return status==='pass'?'O':status==='warn'?'주의':status==='wait'?'대기':'X'}
+function valuationPanelHtml(symbol,item={}){
+ const d=item||live[symbol]||live[normalizeSymbol(symbol)]||{},pe=d.forwardPE??d.trailingPE??null,ps=d.priceToSales??null,eps=d.forwardEps??d.trailingEps??null,growth=d.earningsGrowth??d.revenueGrowth??null;
+ const peLabel=pe==null?'데이터 대기':pe<15?'낮음':pe<25?'보통':pe<45?'부담':'높음';
+ const growthLabel=growth==null?'데이터 대기':growth>0.15?'개선':growth>0?'완만':growth>-0.1?'둔화':'악화';
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${growth==null?'ch-b':growth>0.15?'ch-g':growth>0?'ch-b':growth>-0.1?'ch-y':'ch-r'}">${growthLabel}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">PER</div><div class="check-value">${pe!=null?fmt(pe,1):'—'}</div><div class="check-note">${peLabel}${d.forwardPE?' · Forward':d.trailingPE?' · Trailing':''}</div></div><div class="check-card"><div class="check-title">성장률</div><div class="check-value">${growth!=null?fmtPct(growth*100):'—'}</div><div class="check-note">${d.earningsGrowth!=null?'이익 성장률':d.revenueGrowth!=null?'매출 성장률':'데이터 대기'}</div></div><div class="check-card"><div class="check-title">P/S</div><div class="check-value">${ps!=null?fmt(ps,1):'—'}</div><div class="check-note">매출 대비 가격</div></div><div class="check-card"><div class="check-title">EPS</div><div class="check-value">${eps!=null?fmt(eps,2):'—'}</div><div class="check-note">${d.forwardEps?'Forward':d.trailingEps?'Trailing':'데이터 대기'}</div></div></div></div>`;
+}
+function fibPanelHtml(points,symbol){
+ const vals=(points||[]).map(p=>p.close).filter(Number.isFinite);
+ const d=typeof symbol==='string'?(live[symbol]||live[normalizeSymbol(symbol)]||{}):{};
+ const last=lastPoint(points)?.close??d.price,hi=vals.length?Math.max(...vals):(d.high52w??null),lo=vals.length?Math.min(...vals):(d.low52w??null);
+ if(last==null||hi==null||lo==null||hi===lo)return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">피보나치 되돌림</div><span class="chip ch-b">대기</span></div><div class="mini-note">가격 구간 계산에 필요한 고점/저점 데이터가 아직 부족합니다.</div></div>`;
+ const levels=[0,.236,.382,.5,.618,.786,1].map(r=>({r,price:hi-(hi-lo)*r}));
+ return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">피보나치 되돌림</div><span class="chip ch-b">가격 구간</span></div><div class="mini-note">분할 기준 참고용입니다. 단독 매수신호가 아닙니다.</div><div class="rank-list">${levels.map(x=>`<div class="rank-item ${Math.abs(last/x.price-1)<.015?'hot':''}"><span>${Math.round(x.r*100)}%</span><strong>${fmt(x.price,2)}</strong></div>`).join('')}</div></div>`;
+}
 function maBandPanelHtml(symbol,price){
  const pts=chartDataFor(symbol),last=price??lastPoint(pts)?.close,ma5=movingAverage(pts,5),ma20=movingAverage(pts,20),ma50=movingAverage(pts,50),ma200=movingAverage(pts,200);
  const below5=last!=null&&ma5!=null&&last<ma5,below20=last!=null&&ma20!=null&&last<ma20,below50=last!=null&&ma50!=null&&last<ma50;
@@ -1024,8 +1061,8 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
  const pts=chartDataFor(symbol),rows=pts.filter(p=>Number.isFinite(p.close)),stroke=chg==null?'#246bdb':chg>=0?'#e23b53':'#246bdb',vals=rows.map(p=>p.close),high=vals.length?Math.max(...vals):null,low=vals.length?Math.min(...vals):null,first=rows[0]?.close,lastPt=lastPoint(rows),last=lastPt?.close,ret=first&&last?((last/first-1)*100):null,dd=drawdown(price??last,high),lastDate=lastPt?.t,tech=technicalProfile(symbol,price),item=live[symbol]||live[normalizeSymbol(symbol)]||{},score=expertScore(symbol,price,item),quality=stockQualitySummary(item);
  const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—'),range=vals.length?[low,high]:null;
  const closePath=linePathRange(rows,320,180,12,range),ma5Path=linePathRange(movingSeries(rows,5),320,180,12,range),ma20Path=linePathRange(movingSeries(rows,20),320,180,12,range),ma50Path=linePathRange(movingSeries(rows,50),320,180,12,range),ma200Path=linePathRange(movingSeries(rows,200),320,180,12,range);
- const businessPanel=isIndividualEquity(symbol)?`<div class="mini-card"><div class="mini-head"><div class="mini-title">실적·가격</div><span class="chip ${quality.earningsChip}">${quality.earnings}</span></div><div class="check-grid"><div class="check-card"><div class="check-title">성장</div><div class="check-value">${quality.growth!=null?fmtPct(quality.growth*100):'—'}</div><div class="check-note">최근 매출/이익 성장률</div></div><div class="check-card"><div class="check-title">PER</div><div class="check-value">${quality.pe?fmt(quality.pe,1):'—'}</div><div class="check-note">${quality.price}</div></div></div></div>`:'';
- document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div><svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${maBandPanelHtml(symbol,price)}${chartMasterChecklistHtml(symbol,score,price)}${businessPanel}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts)}`;
+ const businessPanel=valuationPanelHtml(symbol,item);
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}</div></div></div>${businessPanel}<svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".30"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFade)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg><div class="card-sub" style="justify-content:flex-end;margin-top:4px"><span style="color:#22c55e">MA5</span><span style="color:#ef4444">MA20</span><span style="color:#f59e0b">MA50</span><span style="color:#2563eb">MA200</span></div>${maBandPanelHtml(symbol,price)}${chartMasterChecklistHtml(symbol,score,price)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${fibPanelHtml(pts,symbol)}`;
 }
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);

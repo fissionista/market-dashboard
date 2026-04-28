@@ -127,118 +127,6 @@ async function getAaii() {
   }
 }
 
-function translatePolymarketQuestion(q) {
-  if (!q) return null;
-  const original = String(q).trim();
-  const lower = original.toLowerCase();
-
-  const findYear = () => original.match(/\b(20\d{2})\b/)?.[1] || null;
-  const findMonth = () => {
-    const m = lower.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/);
-    if (!m) return null;
-    return ({ january: '1월', february: '2월', march: '3월', april: '4월', may: '5월', june: '6월', july: '7월', august: '8월', september: '9월', october: '10월', november: '11월', december: '12월' })[m[1]];
-  };
-  const findPrice = () => {
-    const m = original.match(/\$\s?([\d.,]+)\s?(k|m|million|billion)?/i);
-    if (!m) return null;
-    const num = m[1];
-    const unit = (m[2] || '').toLowerCase();
-    const unitKr = unit === 'k' ? '천' : unit === 'm' || unit === 'million' ? '백만' : unit === 'billion' ? '십억' : '';
-    return `$${num}${unitKr}`;
-  };
-  const findBps = () => original.match(/(\d+)\s*bps?/i)?.[1];
-  const findPct = () => original.match(/(\d+(?:\.\d+)?)\s*%/)?.[1];
-  const dateLabel = () => {
-    const y = findYear();
-    const m = findMonth();
-    if (m && y) return `${y}년 ${m}`;
-    if (m) return `${m}`;
-    if (y) return `${y}년`;
-    return '';
-  };
-
-  // 1) 비트코인/암호화폐 가격 도달
-  if (/bitcoin|btc|ether|eth|crypto/i.test(original)) {
-    const coin = /ether|eth\b/i.test(original) ? '이더리움' : /bitcoin|btc/i.test(original) ? '비트코인' : '암호화폐';
-    const price = findPrice();
-    const dl = dateLabel();
-    if (/reach|hit|cross|exceed|above|over/i.test(original)) {
-      return `${dl ? dl + '까지 ' : ''}${coin}이(가) ${price ? price + '에 ' : ''}도달할까?`;
-    }
-    if (/below|under|drop/i.test(original)) {
-      return `${dl ? dl + '까지 ' : ''}${coin}이(가) ${price ? price + ' 아래로 ' : ''}하락할까?`;
-    }
-    return `${coin} ${price || ''} 관련 이벤트${dl ? ' (' + dl + ')' : ''}`;
-  }
-
-  // 2) 연준 금리
-  if (/\bfed\b|federal reserve|fomc/i.test(original)) {
-    const dl = dateLabel();
-    const bps = findBps();
-    if (/cut/i.test(original)) {
-      return `${dl ? dl + ' FOMC에서 ' : '연준이 '}${bps ? bps + 'bp ' : ''}금리를 인하할까?`;
-    }
-    if (/hike|raise|increase/i.test(original)) {
-      return `${dl ? dl + ' FOMC에서 ' : '연준이 '}금리를 인상할까?`;
-    }
-    if (/pause|hold|unchanged|skip/i.test(original)) {
-      return `${dl ? dl + ' FOMC에서 ' : '연준이 '}금리를 동결할까?`;
-    }
-    return `${dl ? dl + ' ' : ''}연준 통화정책 이벤트`;
-  }
-
-  // 3) 경기침체
-  if (/recession/i.test(original)) {
-    return `${findYear() ? findYear() + '년 ' : ''}미국 경기침체가 발생할까?`;
-  }
-
-  // 4) 인플레이션
-  if (/inflation|cpi/i.test(original)) {
-    const pct = findPct();
-    const dl = dateLabel();
-    return `${dl ? dl + ' ' : ''}인플레이션(CPI)${pct ? '이 ' + pct + '% 이상이 ' : ' 관련 이벤트'}${pct ? '될까?' : ''}`;
-  }
-
-  // 5) 유가
-  if (/\boil\b|wti|brent|crude/i.test(original)) {
-    const price = findPrice();
-    if (/reach|hit|cross|above|over/i.test(original)) {
-      return `유가가 ${price || ''} 위로 올라갈까?`;
-    }
-    if (/below|under|drop/i.test(original)) {
-      return `유가가 ${price || ''} 아래로 내려갈까?`;
-    }
-    return `유가 관련 이벤트`;
-  }
-
-  // 6) 지정학 / 전쟁
-  if (/\bwar\b|ceasefire|conflict|invasion|nuclear/i.test(original)) {
-    if (/ceasefire/i.test(original)) return `휴전 협상이 성사될까?${dateLabel() ? ' (' + dateLabel() + ')' : ''}`;
-    if (/nuclear/i.test(original)) return `핵 관련 이벤트가 발생할까?`;
-    return `지정학 / 전쟁 관련 이벤트`;
-  }
-
-  // 7) 선거 / 정치
-  if (/election|trump|biden|harris|president|senate|congress/i.test(original)) {
-    if (/trump/i.test(original)) return `트럼프 관련 정치 이벤트`;
-    return `선거 / 정치 관련 이벤트`;
-  }
-
-  // 8) S&P / 증시 지수
-  if (/s&p|sp ?500|nasdaq|dow|stock market/i.test(original)) {
-    const dl = dateLabel();
-    if (/recession|crash|bear/i.test(original)) return `${dl ? dl + ' ' : ''}증시 약세장(베어마켓) 관련 이벤트`;
-    return `${dl ? dl + ' ' : ''}미국 증시 지수 관련 이벤트`;
-  }
-
-  // 9) 실업률 / 고용
-  if (/unemployment|jobless|payroll|jobs report/i.test(original)) {
-    return `미국 고용/실업률 관련 이벤트`;
-  }
-
-  return null;
-}
-
 async function getPrediction() {
   try {
     const data = await getJson('https://gamma-api.polymarket.com/markets?limit=100&active=true&closed=false&order=volume24hr&ascending=false');
@@ -252,14 +140,11 @@ async function getPrediction() {
         price = Number(prices?.[0]);
       } catch {}
     }
-    const question = macro.question || macro.slug;
-    const questionKr = translatePolymarketQuestion(question);
     return {
       label: Number.isFinite(price) ? `${Math.round(price * 100)}%` : '연결됨',
       chip: Number.isFinite(price) && price >= .7 ? 'ch-y' : 'ch-b',
-      question,
-      questionKr,
-      note: '시장 심리 참고용이며 매수/매도 신호는 아닙니다.',
+      question: macro.question || macro.slug,
+      note: `Polymarket 거래량 상위 매크로 이벤트: "${macro.question || macro.slug}"`,
     };
   } catch {
     return null;
