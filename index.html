@@ -6,6 +6,9 @@
 <title>지수 확인 대시보드</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#f4f7fb; --surface:#ffffff; --surface2:#f2f6fb; --border:#d7e0ea;
@@ -99,6 +102,62 @@ input:focus,select:focus{border-color:var(--blue)}
 .judgement-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.judgement-main{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.position-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.axis-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;min-height:96px}.axis-label{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.5px;text-transform:uppercase}.axis-value{font-size:17px;font-weight:900;color:#111827;margin:6px 0 4px;line-height:1.15}.axis-note{font-size:10px;line-height:1.45;color:var(--muted)}.signal-note{font-size:11px;line-height:1.55;color:var(--muted);margin-top:8px}.rank-list{display:grid;gap:5px;margin-top:8px}.rank-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;padding:7px 8px;background:#f8fafc;border:1px solid var(--border);border-radius:8px}.rank-item.hot{background:var(--red-dim);border-color:rgba(226,59,83,.25);color:var(--red);font-weight:900}
 @media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g5{grid-template-columns:repeat(3,1fr)}.signal-grid{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.chart-grid{grid-template-columns:1fr}}
 @media(max-width:600px){header{padding:9px 10px;align-items:center;gap:8px}.logo{font-size:15px}.hdr-mid{flex:0 1 auto;max-width:92px}.hdr-date{display:none}#refreshStatus{font-size:10px;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hdr-right{gap:5px;justify-content:flex-end}.hdr-right .btn{font-size:0;padding:7px 8px}.hdr-right .btn::first-letter{font-size:13px}.g4,.g3,.g2,.g5{grid-template-columns:repeat(2,1fr)}.sector-grid{grid-template-columns:repeat(2,1fr)}.fgrid,.judgement-grid{grid-template-columns:1fr}.judgement-main,.position-grid{grid-template-columns:1fr 1fr}.tabs{width:100%;justify-content:space-between}.tab{flex:1;text-align:center}.card{padding:12px}.card-label{font-size:11px}.card-value{font-size:25px}.card-value.sm{font-size:22px}.pick-grid{grid-template-columns:repeat(2,1fr)}.tv-panel{min-height:390px}.chart-panel{min-height:360px}}
+
+/* Premium terminal theme */
+:root{
+  --bg:#05080d;--surface:#080d13;--surface2:#0d141d;--border:rgba(255,255,255,.10);
+  --text:#eef4fb;--muted:#8b98a8;--green:#00d084;--green-dim:rgba(0,208,132,.14);
+  --red:#ff4d5f;--red-dim:rgba(255,77,95,.14);--yellow:#f0b429;--yellow-dim:rgba(240,180,41,.13);
+  --blue:#40a6ff;--blue-dim:rgba(64,166,255,.14);--orange:#ff8a3d;--orange-dim:rgba(255,138,61,.14);
+  --purple:#9b8cff;--purple-dim:rgba(155,140,255,.14);--mint:#00d4ff;
+}
+body{
+  background:
+    radial-gradient(circle at 12% -8%,rgba(0,146,249,.18),transparent 34%),
+    radial-gradient(circle at 100% 0,rgba(0,208,132,.11),transparent 28%),
+    linear-gradient(180deg,#020408 0%,#05080d 48%,#080c12 100%);
+  color:var(--text);
+  font-family:'DM Sans','Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+}
+header{
+  background:rgba(3,7,12,.86);border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 14px 40px rgba(0,0,0,.34);backdrop-filter:blur(18px);
+}
+.logo{font-family:'Space Grotesk','Pretendard',sans-serif;color:#fff;font-weight:700}.logo span{color:var(--mint)}
+.hdr-date,#refreshStatus{font-family:'JetBrains Mono','Pretendard',monospace}
+.btn{background:#0c131b;border-color:rgba(255,255,255,.12);color:#e8eef6;box-shadow:none;border-radius:8px;font-weight:700}
+.btn:hover{background:#111b26;border-color:rgba(64,166,255,.34)}
+.btn-blue{background:linear-gradient(135deg,#0877ff,#00b7d8);color:#fff}.btn-green{background:rgba(0,208,132,.13);color:var(--green)}
+main{max-width:1280px;padding:14px 16px 28px}.tabs{background:rgba(8,13,19,.78);border-color:rgba(255,255,255,.10);box-shadow:none;border-radius:9px}
+.tab{border-radius:6px;color:#8d9aaa;font-weight:700}.tab.active{background:#e8eef6;color:#05080d;box-shadow:none}
+.alert-list{max-width:1280px;margin:0 auto;padding:10px 16px 0;gap:0}.alert-item{border-radius:0;padding:10px 14px;background:rgba(17,12,0,.72);border:1px solid rgba(240,180,41,.18);border-bottom:0;color:#d9e1ea}
+.alert-item:first-child{border-radius:8px 8px 0 0}.alert-item:last-child{border-bottom:1px solid rgba(240,180,41,.18);border-radius:0 0 8px 8px}
+.al-danger{background:rgba(31,8,12,.72);border-color:rgba(255,77,95,.24)}.al-safe,.al-buy{background:rgba(0,25,17,.68);border-color:rgba(0,208,132,.24)}.al-info{background:rgba(3,17,31,.7);border-color:rgba(64,166,255,.22)}
+.section{margin-bottom:20px}.section-title{display:flex;align-items:center;gap:8px;color:#8e9aaa;letter-spacing:.08em;font-size:10px}
+.section-title:before{content:'';width:3px;height:13px;border-radius:4px;background:var(--blue)}
+.grid{gap:12px}.card,.scard,.mini-card,.signal-item,.risk-check,.high-report,.chart-card,.chart-tile,.tv-panel,.toolbar,.tv-controls,.pick,.search-result,.axis-card,.check-card,.rank-item,.watch-table td{
+  background:linear-gradient(180deg,rgba(12,18,26,.96),rgba(7,11,17,.98));
+  border-color:rgba(255,255,255,.10);box-shadow:none;color:var(--text);
+}
+.card{border-radius:8px;padding:17px;min-height:148px}.card:hover,.scard:hover{border-color:rgba(64,166,255,.42)}
+.card::before,.scard::before{height:2px;background:linear-gradient(90deg,var(--ca,rgba(64,166,255,.45)),transparent)}
+.card-label,.mini-title,.risk-title,.chart-name,.sector-name,.axis-value,.check-title,.watch-symbol{color:#f5f8fb}
+.card-label{font-size:11px;letter-spacing:.02em;color:#b4becb}
+.card-value,.card-value.sm,.mini-value,.chart-now,.watch-price,.chart-modal-price{
+  color:#f7fbff;font-family:'JetBrains Mono','Space Grotesk','Pretendard',monospace;font-weight:700;letter-spacing:-.01em;
+}
+.card-value{font-size:31px}.card-value.sm{font-size:25px}.card-sub,.mini-note,.axis-note,.signal-note,.watch-sub,.high-report-date{color:var(--muted)}
+.chip{border-radius:999px;border:1px solid currentColor;background:transparent;font-family:'DM Sans','Pretendard',sans-serif;font-size:10px;padding:3px 8px}
+.ch-g{color:var(--green);background:rgba(0,208,132,.09)}.ch-r{color:var(--red);background:rgba(255,77,95,.09)}.ch-b{color:var(--blue);background:rgba(64,166,255,.09)}.ch-y{color:var(--yellow);background:rgba(240,180,41,.09)}.ch-p{color:var(--purple);background:rgba(155,140,255,.09)}.ch-o{color:var(--orange);background:rgba(255,138,61,.09)}
+.yield-row,.mini-row,.risk-head,.watch-table th,.hist-table th,.hist-table td,.scard-divider{border-color:rgba(255,255,255,.09)}
+.yield-bar-bg,.tbar,.dd-bar{background:rgba(255,255,255,.11)}
+input,select{background:#0b121a;border-color:rgba(255,255,255,.12);color:#f4f7fb;border-radius:8px}
+.modal{background:#080d13;border-color:rgba(255,255,255,.13);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.modal-overlay{background:rgba(0,0,0,.68)}
+.chart-svg text{fill:#7f8b99}.fg-mood,.gauge-val{font-family:'JetBrains Mono','Pretendard',monospace;color:#f7fbff}
+@media(max-width:600px){
+  main{padding:10px}.alert-list{padding:8px 10px 0}.card{min-height:132px;padding:12px}.card-value{font-size:24px}.card-value.sm{font-size:21px}.tabs{margin-bottom:12px}.tab{padding:8px 10px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -982,7 +1041,7 @@ function trendCell(s,prev,key,dec=0,prefix='',suffix=''){const v=s[key],pv=prev?
 function renderHistory(){document.getElementById('histBody').innerHTML=snapshots.map((s,i)=>{const prev=snapshots[i+1];return `<tr><td>${s.ts}${s.mode==='auto'?'<br><span class="chip ch-g">자동</span>':''}</td><td>${trendCell(s,prev,'sp')}</td><td>${trendCell(s,prev,'nasdaq')}</td><td>${trendCell(s,prev,'kospi')}</td><td>${trendCell(s,prev,'vix',1)}</td><td>${trendCell(s,prev,'y10',2,'','%')}</td><td>${trendCell(s,prev,'gold',0,'$')}</td><td>${trendCell(s,prev,'btc',0,'$')}</td><td>${s.fg!=null?`<span class="chip ${fgStatus(s.fg).chip}">${s.fg}</span>`:'—'}</td></tr>`}).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:20px;text-align:center">매일 새벽 5시 이후 첫 갱신 때 하루 1번 자동 저장됩니다</td></tr>'}
 function clearHistory(){if(confirm('기록을 모두 삭제하시겠습니까?')){snapshots=[];save();renderHistory()}}
 function loadCaptureLib(){return new Promise((resolve,reject)=>{if(window.html2canvas)return resolve(window.html2canvas);const s=document.createElement('script');s.src=CAPTURE_LIB;s.onload=()=>resolve(window.html2canvas);s.onerror=reject;document.head.appendChild(s)})}
-async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#f4f7fb',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
+async function captureDashboard(){const target=document.getElementById('dashboardCapture');if(!target)return alert('캡쳐할 영역을 찾지 못했습니다.');try{setStatus('load','캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#05080d',scale:2,useCORS:true,windowWidth:document.documentElement.scrollWidth});const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`market-dashboard-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob){throw new Error('blob failed')}const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'시장 대시보드'});setStatus('ok','캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','캡쳐 이미지 생성 완료')},'image/png')}catch(e){setStatus('err','캡쳐 실패');alert('캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 async function captureChartModal(){const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');try{setStatus('load','종목 캡쳐 생성 중...');const html2canvas=await loadCaptureLib();const canvas=await html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:target.scrollWidth,windowHeight:target.scrollHeight});const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim();const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;canvas.toBlob(async blob=>{if(!blob)throw new Error('blob failed');const file=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title});setStatus('ok','종목 캡쳐 공유 완료');return}catch(e){}}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();window.open(url,'_blank');setStatus('ok','종목 캡쳐 생성 완료')},'image/png')}catch(e){setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.')}}
 function buildManualFields(){document.getElementById('manualFields').innerHTML=MANUAL_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" id="m_${k}" step="0.01" placeholder="현재값"></div>`).join('')}
 function buildThresholdFields(){document.getElementById('thresholdFields').innerHTML=THRESHOLD_FIELDS.map(([k,l,u])=>`<div class="field"><label>${l}${u?` (${u})`:''}</label><input type="number" id="r_${k}" step="0.01" placeholder="${DEFAULT_REFS[k]??''}"></div>`).join('')}

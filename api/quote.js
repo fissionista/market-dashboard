@@ -105,7 +105,9 @@ async function fetchNaverSummary(symbol) {
     const per = Number(data.per);
     const eps = Number(data.eps);
     const pbr = Number(data.pbr);
+    const marketSum = Number(data.marketSum);
     const finance = await fetchNaverFinance(code);
+    const ps = Number.isFinite(marketSum) && finance.revenueLatest ? marketSum / (finance.revenueLatest * 100) : null;
     return {
       symbol,
       regularMarketPrice: Number.isFinite(now) ? now : null,
@@ -120,12 +122,13 @@ async function fetchNaverSummary(symbol) {
       trailingEps: Number.isFinite(eps) ? eps : null,
       forwardEps: null,
       priceToBook: Number.isFinite(pbr) && pbr > 0 ? pbr : null,
-      priceToSalesTrailing12Months: finance.priceToSalesTrailing12Months,
+      priceToSalesTrailing12Months: Number.isFinite(ps) && ps > 0 ? ps : null,
       earningsQuarterlyGrowth: finance.earningsGrowth,
       revenueGrowth: finance.revenueGrowth,
       operatingIncomeGrowth: finance.earningsGrowth,
       revenueLatest: finance.revenueLatest,
       operatingIncomeLatest: finance.operatingIncomeLatest,
+      marketSum,
     };
   } catch {
     return null;
@@ -165,7 +168,6 @@ async function fetchNaverFinance(code) {
   const empty = {
     revenueGrowth: null,
     earningsGrowth: null,
-    priceToSalesTrailing12Months: null,
     revenueLatest: null,
     operatingIncomeLatest: null,
   };
@@ -187,7 +189,6 @@ async function fetchNaverFinance(code) {
     return {
       revenueGrowth: growthFrom(revenues),
       earningsGrowth: growthFrom(profits),
-      priceToSalesTrailing12Months: null,
       revenueLatest,
       operatingIncomeLatest,
     };
@@ -219,7 +220,7 @@ async function enrichKoreanQuotes(rows, symbols) {
       if (row) {
         Object.entries(s.value).forEach(([k, v]) => {
           if (v == null || v === '') return;
-          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenueLatest', 'operatingIncomeLatest', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
+          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenueLatest', 'operatingIncomeLatest', 'marketSum', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
           else if (row[k] == null || row[k] === '') row[k] = v;
         });
         row.currency = 'KRW';
