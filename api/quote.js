@@ -127,6 +127,14 @@ async function fetchNaverSummary(symbol) {
 
 async function enrichKoreanQuotes(rows, symbols) {
   const out = rows.map((r) => ({ ...r }));
+  out.forEach((row) => {
+    if (!koreanCode(row.symbol)) return;
+    row.trailingPE = null;
+    row.forwardPE = null;
+    row.trailingEps = null;
+    row.forwardEps = null;
+    row.priceToSalesTrailing12Months = null;
+  });
   const rowByCode = new Map(out.map((r) => [koreanCode(r.symbol), r]).filter(([code]) => code));
   const targets = [...new Set(symbols.map(koreanCode).filter(Boolean))].slice(0, 40);
   for (let i = 0; i < targets.length; i += 8) {
@@ -137,7 +145,9 @@ async function enrichKoreanQuotes(rows, symbols) {
       const row = rowByCode.get(code);
       if (row) {
         Object.entries(s.value).forEach(([k, v]) => {
-          if (v != null && (row[k] == null || row[k] === '')) row[k] = v;
+          if (v == null || v === '') return;
+          if (['trailingPE', 'trailingEps', 'priceToBook', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
+          else if (row[k] == null || row[k] === '') row[k] = v;
         });
         row.currency = 'KRW';
       } else {

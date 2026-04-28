@@ -576,7 +576,7 @@ function getChangePct(key){return getLive(key)?.changePct??null}
 function historySeriesFor(sym){const s=String(sym||'').toUpperCase(),n=normalizeSymbol(s);return historyData[s]||historyData[n]||historyData[`${n}.KS`]||historyData[`${n}.KQ`]||[]}
 function getHistoryHigh(sym){const pts=historySeriesFor(sym);const vals=pts.map(p=>Number.isFinite(p.high)?p.high:p.close).filter(Number.isFinite);return vals.length?Math.max(...vals):null}
 function getHistoryLow(sym){const pts=historySeriesFor(sym);const vals=pts.map(p=>Number.isFinite(p.low)?p.low:p.close).filter(Number.isFinite);return vals.length?Math.min(...vals):null}
-function applyHistoryHighs(){Object.entries(SYM).forEach(([key,sym])=>{const h=getHistoryHigh(sym),item=getLive(key);if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)});Object.keys(live).forEach(sym=>{const h=getHistoryHigh(sym),item=live[sym];if(item&&h&&(!item.high52w||h>item.high52w*.98))item.high52w=Math.max(item.high52w||0,h)})}
+function applyHistoryHighs(){Object.entries(SYM).forEach(([key,sym])=>{const h=getHistoryHigh(sym),l=getHistoryLow(sym),item=getLive(key);if(item&&h)item.high52w=h;if(item&&l)item.low52w=l});Object.keys(live).forEach(sym=>{const h=getHistoryHigh(sym),l=getHistoryLow(sym),item=live[sym];if(item&&h)item.high52w=h;if(item&&l)item.low52w=l})}
 function getHigh52(key,refKey){const sym=SYM[key]||key;return getLive(key)?.high52w??getHistoryHigh(sym)??refs[refKey]??null}
 function getFearGreed(){return manual.fg??fearGreed?.score??null}
 function drawdown(price,high){return price&&high?((price-high)/high*100):null}
@@ -1079,8 +1079,8 @@ function fibPanelHtml(points,symbol){
  const highs=rows.map(p=>Number.isFinite(p.high)?p.high:p.close).filter(Number.isFinite);
  const lows=rows.map(p=>Number.isFinite(p.low)?p.low:p.close).filter(Number.isFinite);
  const last=lastPoint(rows)?.close??d.price;
- const hi=d.high52w??(highs.length?Math.max(...highs):getHistoryHigh(symbol));
- const lo=d.low52w??(lows.length?Math.min(...lows):getHistoryLow(symbol));
+ const hi=(highs.length?Math.max(...highs):getHistoryHigh(symbol))??d.high52w;
+ const lo=(lows.length?Math.min(...lows):getHistoryLow(symbol))??d.low52w;
  if(last==null||hi==null||lo==null||hi===lo)return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">피보나치 되돌림</div><span class="chip ch-b">데이터 대기</span></div><div class="mini-note">가격 구간 계산에 필요한 고점/저점 데이터가 아직 부족합니다. 한국 종목은 숫자 코드만 있어도 .KS/.KQ 차트를 자동으로 다시 시도합니다.</div></div>`;
  const levels=[0,.236,.382,.5,.618,.786,1].map(r=>({r,price:hi-(hi-lo)*r}));
  return `<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">피보나치 되돌림</div><span class="chip ch-b">${rows.length?'1년 고저':'52주 고저'}</span></div><div class="mini-note">분할 기준 참고용입니다. 단독 매수신호가 아니라 추세·거래량·손절선과 같이 봅니다.</div><div class="rank-list">${levels.map(x=>`<div class="rank-item ${Math.abs(last/x.price-1)<.015?'hot':''}"><span>${Math.round(x.r*100)}%</span><strong>${fmt(x.price,2)}</strong></div>`).join('')}</div></div>`;
@@ -1110,12 +1110,12 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
 async function openChartByKey(label,key){
  const symbol=SYM[key]||key, item=getLive(key), price=getPrice(key), chg=getChangePct(key);
  renderChartModal(label,symbol,price,chg,item?.currency||'USD');document.getElementById('chartModal').classList.add('open');
- if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};renderChartModal(label,symbol,price,chg,item?.currency||'USD')}
+ if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};applyHistoryHighs();renderChartModal(label,symbol,price,chg,item?.currency||'USD')}
 }
 async function openChartByTicker(ticker,label,country='US'){
  const symbol=ticker.toUpperCase(), item=live[symbol]||live[normalizeSymbol(symbol)]||{}, price=item.price??null, chg=item.changePct??null, currency=item.currency||(country==='KR'?'KRW':'USD');
  renderChartModal(label||symbol,symbol,price,chg,currency);document.getElementById('chartModal').classList.add('open');
- if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};renderChartModal(label||symbol,symbol,price,chg,currency)}
+ if(!chartDataFor(symbol).length&&location.protocol!=='file:'){const data=await fetchHistoryBatch([symbol]);historyData={...historyData,...data};applyHistoryHighs();renderChartModal(label||symbol,symbol,price,chg,currency)}
 }
 function openModal(){MANUAL_FIELDS.forEach(([k])=>{const el=document.getElementById('m_'+k);if(el)el.value=manual[k]??''});const refMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(refMap).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=refs[k]??''});THRESHOLD_FIELDS.forEach(([k])=>{const el=document.getElementById('r_'+k);if(el)el.value=refs[k]??DEFAULT_REFS[k]??''});const provider=document.getElementById('set_provider'),alpha=document.getElementById('set_alpha');if(provider)provider.value=settings.provider||'auto';if(alpha)alpha.value=settings.alphaKey||'';document.getElementById('editModal').classList.add('open')}
 function saveModal(){const getV=id=>{const e=document.getElementById(id);return e&&e.value!==''?parseFloat(e.value):null};MANUAL_FIELDS.forEach(([k])=>{const v=getV('m_'+k);if(v!=null)manual[k]=v;else delete manual[k]});const rMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(rMap).forEach(([k,id])=>{const v=getV(id);if(v!=null)refs[k]=v});THRESHOLD_FIELDS.forEach(([k])=>{const v=getV('r_'+k);refs[k]=v!=null?v:DEFAULT_REFS[k]});settings.provider=document.getElementById('set_provider')?.value||'auto';settings.alphaKey=document.getElementById('set_alpha')?.value.trim()||'';save();closeModal();renderAll();fetchAll(true)}
