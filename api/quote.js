@@ -17,24 +17,14 @@ const FIELDS = [
 
 async function fetchYahoo(symbols) {
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&fields=${FIELDS}`;
-  const res = await fetch(url, {
-    headers: {
-      accept: 'application/json,text/plain,*/*',
-      'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
-    },
-  });
+  const res = await fetch(url, { headers: yahooHeaders() });
   if (!res.ok) throw new Error(`Yahoo quote ${res.status}`);
   return res.json();
 }
 
 async function fetchChart(symbol) {
   const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
-  const res = await fetch(url, {
-    headers: {
-      accept: 'application/json,text/plain,*/*',
-      'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
-    },
-  });
+  const res = await fetch(url, { headers: yahooHeaders() });
   if (!res.ok) return null;
   const data = await res.json();
   const meta = data?.chart?.result?.[0]?.meta;
@@ -58,26 +48,19 @@ function raw(v) {
 
 async function fetchFundamentals(symbol) {
   const modules = 'summaryDetail,defaultKeyStatistics,financialData';
-  const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`;
-  const res = await fetch(url, {
-    headers: {
-      accept: 'application/json,text/plain,*/*',
-      'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
-    },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const r = data?.quoteSummary?.result?.[0];
-  if (!r) return null;
-  return {
-    trailingPE: raw(r.summaryDetail?.trailingPE) ?? raw(r.defaultKeyStatistics?.trailingPE) ?? null,
-    forwardPE: raw(r.summaryDetail?.forwardPE) ?? raw(r.defaultKeyStatistics?.forwardPE) ?? null,
-    priceToSalesTrailing12Months: raw(r.summaryDetail?.priceToSalesTrailing12Months) ?? raw(r.defaultKeyStatistics?.priceToSalesTrailing12Months) ?? null,
-    trailingEps: raw(r.defaultKeyStatistics?.trailingEps) ?? null,
-    forwardEps: raw(r.defaultKeyStatistics?.forwardEps) ?? null,
-    earningsQuarterlyGrowth: raw(r.defaultKeyStatistics?.earningsQuarterlyGrowth) ?? null,
-    revenueGrowth: raw(r.financialData?.revenueGrowth) ?? null,
-  };
+  const hosts = ['query2.finance.yahoo.com', 'query1.finance.yahoo.com'];
+  for (const host of hosts) {
+    try {
+      const url = `https://${host}/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`;
+      const res = await fetch(url, { headers: yahooHeaders() });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const r = data?.quoteSummary?.result?.[0];
+      const parsed = parseQuoteSummary(r);
+      if (hasFundamental(parsed)) return parsed;
+    } catch {}
+  }
+  return fetchYahooPageFundamentals(symbol);
 }
 
 async function enrichFundamentals(rows) {
@@ -95,6 +78,70 @@ async function enrichFundamentals(rows) {
     });
   }
   return rows;
+}
+
+function yahooHeaders() {
+  return {
+    accept: 'application/json,text/html,text/plain,*/*',
+    'accept-language': 'en-US,en;q=0.9',
+    'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
+  };
+}
+
+function parseQuoteSummary(r) {
+  if (!r) return null;
+  return {
+    trailingPE: raw(r.summaryDetail?.trailingPE) ?? raw(r.defaultKeyStatistics?.trailingPE) ?? null,
+    forwardPE: raw(r.summaryDetail?.forwardPE) ?? raw(r.defaultKeyStatistics?.forwardPE) ?? null,
+    priceToSalesTrailing12Months: raw(r.summaryDetail?.priceToSalesTrailing12Months) ?? raw(r.defaultKeyStatistics?.priceToSalesTrailing12Months) ?? null,
+    trailingEps: raw(r.defaultKeyStatistics?.trailingEps) ?? null,
+    forwardEps: raw(r.defaultKeyStatistics?.forwardEps) ?? null,
+    earningsQuarterlyGrowth: raw(r.defaultKeyStatistics?.earningsQuarterlyGrowth) ?? null,
+    revenueGrowth: raw(r.financialData?.revenueGrowth) ?? null,
+  };
+}
+
+function hasFundamental(v) {
+  return !!v && Object.values(v).some((x) => x != null && Number.isFinite(Number(x)));
+}
+
+function firstJsonNumber(html, keys) {
+  for (const key of keys) {
+    const patterns = [
+      new RegExp(`data-value="(-?\\d+(?:\\.\\d+)?)"[^>]*data-field="${key}"`, 'i'),
+      new RegExp(`data-field="${key}"[^>]*data-value="(-?\\d+(?:\\.\\d+)?)"`, 'i'),
+      new RegExp(`"${key}"\\s*:\\s*\\{\\s*"raw"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, 'i'),
+      new RegExp(`"${key}"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, 'i'),
+      new RegExp(`\\\\"${key}\\\\"\\s*:\\s*\\{\\s*\\\\"raw\\\\"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, 'i'),
+      new RegExp(`\\\\"${key}\\\\"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, 'i'),
+    ];
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match) return Number(match[1]);
+    }
+  }
+  return null;
+}
+
+async function fetchYahooPageFundamentals(symbol) {
+  try {
+    const url = `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`;
+    const res = await fetch(url, { headers: yahooHeaders() });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const parsed = {
+      trailingPE: firstJsonNumber(html, ['trailingPE', 'trailingPe', 'trailingPEValue']),
+      forwardPE: firstJsonNumber(html, ['forwardPE', 'forwardPe']),
+      priceToSalesTrailing12Months: firstJsonNumber(html, ['priceToSalesTrailing12Months', 'priceToSales']),
+      trailingEps: firstJsonNumber(html, ['trailingEps', 'epsTrailingTwelveMonths']),
+      forwardEps: firstJsonNumber(html, ['forwardEps']),
+      earningsQuarterlyGrowth: firstJsonNumber(html, ['earningsQuarterlyGrowth']),
+      revenueGrowth: firstJsonNumber(html, ['revenueGrowth']),
+    };
+    return hasFundamental(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchFallback(symbols) {
