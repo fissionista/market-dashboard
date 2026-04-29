@@ -664,6 +664,14 @@ html,body{overflow-x:hidden}
 .capture-summary-alert.warn{background:#fff7ed;border-left-color:#f59e0b;color:#7c2d12}
 .capture-summary-alert.safe{background:#f0fdf4;border-left-color:#16a34a;color:#14532d}
 .capture-summary-foot{margin-top:10px;font-size:11px;color:#94a3b8;text-align:right}
+.chart-capture-target{width:760px;background:#fff;color:#111827;padding:18px;font-family:'Pretendard','Inter',system-ui,sans-serif}
+.chart-capture-target-inner{background:#fff;border:1px solid #d8e0eb;border-radius:14px;padding:18px;box-shadow:0 12px 30px rgba(15,23,42,.08)}
+.chart-capture-target .chart-modal-head{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e5ebf2}
+.chart-capture-target .chart-modal-title{font-size:24px;line-height:1.15}
+.chart-capture-target .chart-modal-price{font-size:34px}
+.chart-capture-target .chart-svg{height:250px;background:#fbfdff;border:1px solid #edf1f6;border-radius:10px}
+.chart-capture-target .analysis-hero{box-shadow:none;border-color:#d8e0eb}
+.chart-capture-target details.analysis-details{display:none}
 .analysis-hero{background:#fff;border:1px solid var(--border);border-radius:12px;padding:15px;margin-top:12px;box-shadow:var(--shadow-sm)}
 .analysis-kicker{font-size:12px;color:var(--muted);font-weight:850;margin-bottom:4px}
 .analysis-title{font-size:22px;font-weight:900;color:var(--text);line-height:1.2}
@@ -1778,9 +1786,25 @@ async function captureElement(target,name,title,bg='#f7f9fc',mode='preview'){
  }
 }
 async function captureChartModal(){
- const target=document.getElementById('chartModalBody');if(!target)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');
- const title=(target.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim(),d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;
- try{setStatus('load','종목 캡쳐 생성 중...');await captureElement(target,name,title||'종목 차트','#ffffff')}catch(e){console.error(e);setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 새로고침 후 다시 시도해 주세요.')};
+ const source=document.getElementById('chartModalBody');if(!source)return alert('캡쳐할 종목 화면을 찾지 못했습니다.');
+ const title=(source.querySelector('.chart-modal-title')?.textContent||'stock').replace(/[\\/:*?"<>|]/g,'').trim(),d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`${title||'stock'}-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.png`;
+ const target=document.createElement('div');
+ target.id='chartCaptureTarget';
+ target.className='chart-capture-target';
+ target.style.position='absolute';
+ target.style.left='0';
+ target.style.top='0';
+ target.style.zIndex='-1000';
+ target.style.pointerEvents='none';
+ const inner=document.createElement('div');
+ inner.className='chart-capture-target-inner';
+ const clone=source.cloneNode(true);
+ clone.id='chartCaptureBody';
+ clone.querySelectorAll('button,.modal-actions').forEach(x=>x.remove());
+ inner.appendChild(clone);
+ target.appendChild(inner);
+ document.body.appendChild(target);
+ try{setStatus('load','종목 캡쳐 저장 중...');await captureElement(target,name,title||'종목 차트','#ffffff','download')}catch(e){console.error(e);setStatus('err','종목 캡쳐 실패');alert('종목 캡쳐 생성에 실패했습니다. 새로고침 후 다시 시도해 주세요.')}finally{target.remove()}
 }
 function htmlSafe(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function captureToneByChange(chg){return chg==null?'':chg>=0?'up':'down'}
