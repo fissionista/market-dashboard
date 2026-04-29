@@ -295,6 +295,7 @@ main{max-width:1320px;padding:18px 22px 36px}
 .rotation-board{grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px}
 .rotation-list{display:grid;gap:7px}
 .rotation-item{display:grid;grid-template-columns:1.2fr .7fr .7fr .7fr auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:#fbfdff;cursor:pointer}
+.rotation-item.etf-row{grid-template-columns:1.25fr .72fr .72fr .72fr auto}
 .rotation-name{font-weight:900;color:var(--text)}
 .rotation-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .rotation-val{font-family:'JetBrains Mono','Pretendard',monospace;font-weight:800;text-align:right}
@@ -908,11 +909,21 @@ const DEFAULT_TV=[
  {id:'btc',label:'비트코인',key:'btc',symbol:'BITSTAMP:BTCUSD',on:true}
 ];
 const LEADER_ETFS=[
- {ticker:'XLK',name:'미국 기술주',country:'US'},{ticker:'XLC',name:'미국 커뮤니케이션',country:'US'},{ticker:'XLY',name:'미국 소비재',country:'US'},{ticker:'XLI',name:'미국 산업재',country:'US'},
- {ticker:'XLE',name:'미국 에너지',country:'US'},{ticker:'XLF',name:'미국 금융',country:'US'},{ticker:'XLV',name:'미국 헬스케어',country:'US'},{ticker:'XLU',name:'미국 유틸리티',country:'US'},
- {ticker:'XLB',name:'미국 소재',country:'US'},{ticker:'XLRE',name:'미국 리츠',country:'US'},{ticker:'SOXX',name:'미국 반도체',country:'US'},{ticker:'SMH',name:'미국 반도체 대형',country:'US'},
- {ticker:'091160.KS',name:'한국 반도체',country:'KR'},{ticker:'305720.KS',name:'한국 2차전지',country:'KR'},{ticker:'117460.KS',name:'한국 에너지화학',country:'KR'},{ticker:'102110.KS',name:'한국 코스피200',country:'KR'},
- {ticker:'SPY',name:'S&P500 ETF',country:'US'},{ticker:'GRID',name:'전력 인프라 ETF',country:'US'},{ticker:'LIT',name:'리튬 ETF',country:'US'},{ticker:'EWY',name:'한국 ETF',country:'US'},{ticker:'DRAM',name:'메모리 ETF',country:'US'}
+ {ticker:'SPY',name:'S&P500',country:'US',theme:'대표지수'},{ticker:'QQQ',name:'나스닥100',country:'US',theme:'대표지수'},{ticker:'IWM',name:'러셀2000',country:'US',theme:'중소형주'},
+ {ticker:'XLK',name:'기술주',country:'US',theme:'빅테크'},{ticker:'XLC',name:'커뮤니케이션',country:'US',theme:'플랫폼/미디어'},{ticker:'XLY',name:'소비재',country:'US',theme:'소비'},{ticker:'XLI',name:'산업재',country:'US',theme:'산업재'},
+ {ticker:'XLE',name:'에너지',country:'US',theme:'에너지'},{ticker:'XLF',name:'금융',country:'US',theme:'금융'},{ticker:'XLV',name:'헬스케어',country:'US',theme:'헬스케어'},{ticker:'XLU',name:'유틸리티',country:'US',theme:'전력/유틸리티'},
+ {ticker:'XLB',name:'소재',country:'US',theme:'소재'},{ticker:'XLRE',name:'리츠',country:'US',theme:'부동산'},{ticker:'KRE',name:'지역은행',country:'US',theme:'은행'},{ticker:'XME',name:'금속/광산',country:'US',theme:'원자재'},
+ {ticker:'SOXX',name:'반도체',country:'US',theme:'반도체'},{ticker:'SMH',name:'반도체 대형',country:'US',theme:'반도체'},{ticker:'DRAM',name:'메모리',country:'US',theme:'메모리'},
+ {ticker:'BOTZ',name:'로보틱스',country:'US',theme:'로봇/AI'},{ticker:'ROBO',name:'로봇 자동화',country:'US',theme:'로봇/AI'},
+ {ticker:'GRID',name:'전력 인프라',country:'US',theme:'전력'},{ticker:'PAVE',name:'미국 인프라',country:'US',theme:'인프라'},{ticker:'ITB',name:'주택건설',country:'US',theme:'주택'},{ticker:'XHB',name:'주택산업',country:'US',theme:'주택'},
+ {ticker:'URA',name:'원자력',country:'US',theme:'원전'},{ticker:'URNM',name:'우라늄',country:'US',theme:'우라늄'},{ticker:'REMX',name:'희토류',country:'US',theme:'희토류'},{ticker:'LIT',name:'리튬',country:'US',theme:'2차전지'},{ticker:'COPX',name:'구리광산',country:'US',theme:'구리'},
+ {ticker:'USO',name:'유가',country:'US',theme:'원유'},{ticker:'XOP',name:'석유가스',country:'US',theme:'에너지'},{ticker:'TAN',name:'태양광',country:'US',theme:'태양광'},{ticker:'GLD',name:'금',country:'US',theme:'금'},{ticker:'SLV',name:'은',country:'US',theme:'은'},{ticker:'EWY',name:'한국 ETF',country:'US',theme:'한국'},
+ {ticker:'069500.KS',name:'KODEX 200',country:'KR',theme:'대표지수'},{ticker:'102110.KS',name:'TIGER 200',country:'KR',theme:'대표지수'},{ticker:'229200.KS',name:'KODEX 코스닥150',country:'KR',theme:'코스닥'},
+ {ticker:'091160.KS',name:'KODEX 반도체',country:'KR',theme:'반도체'},{ticker:'471760.KS',name:'TIGER AI반도체핵심공정',country:'KR',theme:'AI반도체'},{ticker:'305720.KS',name:'KODEX 2차전지산업',country:'KR',theme:'2차전지'},
+ {ticker:'487240.KS',name:'KODEX AI전력핵심설비',country:'KR',theme:'전력'},{ticker:'487230.KS',name:'KODEX 미국AI전력핵심인프라',country:'KR',theme:'미국전력'},
+ {ticker:'381170.KS',name:'TIGER 미국테크TOP10',country:'KR',theme:'미국빅테크'},{ticker:'472160.KS',name:'TIGER 미국테크TOP10(H)',country:'KR',theme:'미국빅테크'},
+ {ticker:'445290.KS',name:'KODEX 로봇액티브',country:'KR',theme:'로봇'},{ticker:'117460.KS',name:'KODEX 에너지화학',country:'KR',theme:'에너지화학'},
+ {ticker:'091180.KS',name:'KODEX 자동차',country:'KR',theme:'자동차'},{ticker:'091170.KS',name:'KODEX 은행',country:'KR',theme:'은행'},{ticker:'117680.KS',name:'KODEX 철강',country:'KR',theme:'철강'},{ticker:'244580.KS',name:'KODEX 바이오',country:'KR',theme:'바이오'}
 ];
 const HIGH_WATCH=[
  {ticker:'NVDA',name:'NVDA',note:'AI GPU',group:'🤖 AI인프라·광통신'},
@@ -1472,6 +1483,14 @@ function movingAverage(points,n){const vals=(points||[]).map(p=>p.close).filter(
 function movingSeries(points,n){const rows=(points||[]).filter(p=>Number.isFinite(p.close));return rows.map((p,i)=>i+1>=n?{...p,close:avgNums(rows.slice(i-n+1,i+1).map(x=>x.close))}:null).filter(Boolean)}
 function linePathRange(points,w=320,h=180,pad=12,range=null){const rows=(points||[]).filter(p=>Number.isFinite(p.close));if(rows.length<2)return '';const vals=range||rows.map(p=>p.close),min=Array.isArray(range)?range[0]:Math.min(...vals),max=Array.isArray(range)?range[1]:Math.max(...vals),span=max-min||1;return rows.map((p,i)=>{const x=pad+(i/(rows.length-1))*(w-pad*2),y=pad+(1-(p.close-min)/span)*(h-pad*2);return `${i?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`}).join(' ')}
 function historyReturn(symbol){const pts=chartDataFor(symbol),first=pts.find(p=>Number.isFinite(p.close))?.close,last=lastPoint(pts)?.close;return first&&last?((last-first)/first*100):null}
+function ytdReturn(symbol){
+ const pts=chartDataFor(symbol).filter(p=>Number.isFinite(p.close));
+ if(pts.length<2)return null;
+ const startTime=new Date(new Date().getFullYear(),0,1).getTime();
+ const start=pts.find(p=>(p.t||0)>=startTime)?.close??pts[0]?.close;
+ const last=pts.at(-1)?.close;
+ return start&&last?((last/start-1)*100):null;
+}
 function avgNums(vals){const xs=vals.filter(Number.isFinite);return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null}
 function rsiValue(points,n=14){const vals=(points||[]).map(p=>p.close).filter(Number.isFinite);if(vals.length<n+1)return null;let gains=0,losses=0;for(let i=vals.length-n;i<vals.length;i++){const d=vals[i]-vals[i-1];if(d>=0)gains+=d;else losses-=d}if(losses===0)return 100;const rs=gains/losses;return 100-(100/(1+rs))}
 function stochasticValue(points,n=14){const rows=(points||[]).slice(-n).filter(p=>Number.isFinite(p.close));if(rows.length<n)return null;const hi=Math.max(...rows.map(p=>Number.isFinite(p.high)?p.high:p.close)),lo=Math.min(...rows.map(p=>Number.isFinite(p.low)?p.low:p.close)),last=rows.at(-1).close;return hi===lo?50:((last-lo)/(hi-lo)*100)}
@@ -2216,8 +2235,15 @@ function renderSectors(){
 }
 function renderLeaderEtfs(){
  const box=document.getElementById('leader-etfs');if(!box)return;
- const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)]||{},p=d.price??null,r1=periodReturn(e.ticker,21),r3=periodReturn(e.ticker,63),r6=periodReturn(e.ticker,126),ma=maAlignmentProfile(e.ticker,p),score=(r1??-999)*.45+(r3??-999)*.35+(r6??-999)*.20+(ma.score||0)*3;return {...e,d,p,r1,r3,r6,ma,score}}).filter(x=>x.p!=null).sort((a,b)=>b.score-a.score).slice(0,10);
- box.innerHTML=`<div class="rotation-board"><div class="mini-head"><div><div class="mini-title">섹터 로테이션</div><div class="mini-note">ETF 1개월·3개월·6개월 수익률과 이동평균 정렬로 주도 섹터를 정렬합니다.</div></div><span class="chip ch-b">ETF 기준</span></div><div class="rotation-list">${rows.length?rows.map(x=>`<div class="rotation-item" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div><div class="rotation-name">${x.name}</div><div class="rotation-sub">${x.ticker} · ${x.country}</div></div><div class="rotation-val" style="color:${(x.r1??0)>=0?'var(--red)':'var(--blue)'}">1M ${x.r1!=null?fmtPct(x.r1):'—'}</div><div class="rotation-val" style="color:${(x.r3??0)>=0?'var(--red)':'var(--blue)'}">3M ${x.r3!=null?fmtPct(x.r3):'—'}</div><div class="rotation-val" style="color:${(x.r6??0)>=0?'var(--red)':'var(--blue)'}">6M ${x.r6!=null?fmtPct(x.r6):'—'}</div><span class="chip ${x.ma.chip}">${x.ma.label}</span></div>`).join(''):'<div class="mini-note">섹터 ETF 데이터 연결 대기</div>'}</div></div>`;
+ const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)]||{},p=d.price??null,day=d.changePct??null,ytd=ytdReturn(e.ticker),high=d.high52w??getHistoryHigh(e.ticker),gap=p&&high?(p/high-1)*100:null,near=nearHighLabel(p,high);return {...e,d,p,day,ytd,high,gap,near}}).filter(x=>x.p!=null&&x.high!=null&&x.gap!=null);
+ const highs=rows.filter(x=>x.gap>=0).sort((a,b)=>(b.day??-999)-(a.day??-999));
+ const near=rows.filter(x=>x.gap<0&&x.gap>=-1.5).sort((a,b)=>b.gap-a.gap);
+ const fallback=rows.filter(x=>x.gap< -1.5).sort((a,b)=>b.gap-a.gap).slice(0,8);
+ const selected=[...highs,...near];
+ const topUs=selected.filter(x=>x.country==='US'),topKr=selected.filter(x=>x.country==='KR');
+ const rowHtml=x=>`<div class="rotation-item etf-row" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div><div class="rotation-name">${x.gap>=0?'🚀 ':''}${x.name}</div><div class="rotation-sub">${x.ticker} · ${x.theme||x.country}</div></div><div class="rotation-val" style="color:${x.gap>=0?'var(--red)':'var(--purple)'}">${x.gap>=0?'52주 신고가':'고점 '+x.gap.toFixed(1)+'%'}</div><div class="rotation-val">${x.high!=null?fmtStockPrice(x.high,x.d.currency||(/[.](KS|KQ)$/i.test(x.ticker)?'KRW':'USD')):'—'}</div><div class="rotation-val" style="color:${(x.day??0)>=0?'var(--red)':'var(--blue)'}">일간 ${x.day!=null?fmtPct(x.day):'—'}</div><span class="chip ${x.gap>=0?'ch-r':'ch-p'}">${x.gap>=0?'52주 신고가':'신고가권'}</span></div>`;
+ const fallbackHtml=fallback.map(x=>`<div class="rotation-item etf-row" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div><div class="rotation-name">${x.name}</div><div class="rotation-sub">${x.ticker} · ${x.theme||x.country}</div></div><div class="rotation-val">고점 ${x.gap.toFixed(1)}%</div><div class="rotation-val">${x.high!=null?fmtStockPrice(x.high,x.d.currency||(/[.](KS|KQ)$/i.test(x.ticker)?'KRW':'USD')):'—'}</div><div class="rotation-val" style="color:${(x.day??0)>=0?'var(--red)':'var(--blue)'}">일간 ${x.day!=null?fmtPct(x.day):'—'}</div><span class="chip ch-b">대기</span></div>`).join('');
+ box.innerHTML=`<div class="rotation-board"><div class="mini-head"><div><div class="mini-title">52주 신고가 섹터 ETF</div><div class="mini-note">미국·한국 ETF 전체 후보에서 52주 신고가를 찍었거나 고점 -1.5% 이내인 섹터만 표시합니다. 신고가가 없으면 가장 가까운 후보만 대기 목록으로 보여줍니다.</div></div><span class="chip ch-p">52주 신고가 포함</span></div><div class="rotation-list">${selected.length?`${topUs.length?`<div class="sector-country-lbl">🇺🇸 미국 신고가 ETF</div>${topUs.map(rowHtml).join('')}`:''}${topKr.length?`<div class="sector-country-lbl" style="margin-top:12px">🇰🇷 한국 신고가 ETF</div>${topKr.map(rowHtml).join('')}`:''}`:`<div class="mini-note">현재 52주 신고가/신고가권 ETF가 없습니다. 가장 가까운 후보를 아래에 표시합니다.</div>${fallbackHtml}`}</div></div>`;
 }
 function chartMasterChecklistHtml(symbol,score,price){
  const ma=maAlignmentProfile(symbol,price),vol=volumeSignalProfile(symbol),macd=macdProfile(chartDataFor(symbol)),atr=atrPlanProfile(symbol,price),rsi=rsiValue(chartDataFor(symbol)),bb=bollingerProfile(chartDataFor(symbol)),checks=[
