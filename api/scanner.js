@@ -41,6 +41,58 @@ function cleanNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+function validDailyBar(row) {
+  return row
+    && [row.open, row.high, row.low, row.close].every((v) => Number.isFinite(v) && v > 0)
+    && row.high >= Math.max(row.open, row.low, row.close)
+    && row.low <= Math.min(row.open, row.high, row.close);
+}
+
+function scoreDailyBar(row, preferred = false) {
+  let score = preferred ? 3 : 0;
+  if (!row || ![row.open, row.high, row.low, row.close].every((v) => Number.isFinite(v) && v > 0)) return -20;
+  if (row.high >= Math.max(row.open, row.low, row.close)) score += 5;
+  else score -= 8;
+  if (row.low <= Math.min(row.open, row.high, row.close)) score += 5;
+  else score -= 8;
+  if (Number.isFinite(row.volume) && row.volume >= 0) score += 1;
+  if (row.low > 0 && row.high / row.low < 1.45) score += 1;
+  return score;
+}
+
+function parseNaverSiseRows(text) {
+  const header = text.match(/\[\s*['"]?날짜['"]?[\s\S]*?\]/)?.[0] || '';
+  const closeFirstHeader = header.includes('종가') && (!header.includes('시가') || header.indexOf('종가') < header.indexOf('시가'));
+  return [...text.matchAll(/\[\s*['"]?(\d{8})['"]?\s*,([^\]]+)\]/g)]
+    .map((m) => {
+      const nums = m[2].split(',').map((x) => cleanNumber(String(x).replace(/['"]/g, '')));
+      const t = new Date(`${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[1].slice(6, 8)}T00:00:00Z`).getTime();
+      const ohlc = {
+        t,
+        date: m[1],
+        open: nums[0],
+        high: nums[1],
+        low: nums[2],
+        close: nums[3],
+        volume: nums[4],
+        foreignRate: nums[5],
+      };
+      const closeFirst = {
+        t,
+        date: m[1],
+        close: nums[0],
+        open: nums[2],
+        high: nums[3],
+        low: nums[4],
+        volume: nums[5],
+        foreignRate: nums[6],
+      };
+      const chosen = scoreDailyBar(closeFirst, closeFirstHeader) > scoreDailyBar(ohlc, !closeFirstHeader) ? closeFirst : ohlc;
+      return validDailyBar(chosen) ? chosen : null;
+    })
+    .filter(Boolean);
+}
+
 function avg(values) {
   const xs = values.filter(Number.isFinite);
   return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
@@ -159,17 +211,7 @@ async function fetchHistory(code) {
     const text = await fetchText(url, {
       headers: headers({ referer: `https://finance.naver.com/item/main.naver?code=${code}` }),
     }, 6500);
-    return [...text.matchAll(/\["(\d{8})",\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+|null|-)?/g)]
-      .map((m) => ({
-        date: m[1],
-        open: cleanNumber(m[2]),
-        high: cleanNumber(m[3]),
-        low: cleanNumber(m[4]),
-        close: cleanNumber(m[5]),
-        volume: cleanNumber(m[6]),
-        foreignRate: cleanNumber(m[7]),
-      }))
-      .filter((p) => Number.isFinite(p.close));
+    return parseNaverSiseRows(text);
   } catch {
     return [];
   }
@@ -227,9 +269,9 @@ function detectPatterns(rows, summary) {
   const close = summaryPrice && historyClose && Math.abs((summaryPrice / historyClose) - 1) <= 0.25
     ? summaryPrice
     : historyClose ?? summaryPrice ?? null;
-  const high52 = Math.max(close ?? 0, ...rows.map((p) => p.high ?? p.close).filter(Number.isFinite));
-  const low52 = Math.min(...rows.map((p) => p.low ?? p.close).filter(Number.isFinite));
-  const high20 = Math.max(...rows.slice(-20).map((p) => p.high ?? p.close).filter(Number.isFinite));
+  const high52 = Math.max(close ?? 0, ...rows.flatMap((p) => [p.high, p.close]).filter(Number.isFinite));
+  const low52 = Math.min(...rows.flatMap((p) => [p.low, p.close]).filter(Number.isFinite));
+  const high20 = Math.max(...rows.slice(-20).flatMap((p) => [p.high, p.close]).filter(Number.isFinite));
   const ma20 = ma(rows, 20);
   const ma50 = ma(rows, 50);
   const ma150 = ma(rows, 150);

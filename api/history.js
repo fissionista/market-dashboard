@@ -51,6 +51,45 @@ function parseCsvLine(line) {
   return out.map((x) => x.replace(/^"|"$/g, '').trim());
 }
 
+function parseNumber(value) {
+  const n = Number(String(value ?? '').replace(/,/g, '').trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function validDailyBar(row) {
+  return row
+    && [row.open, row.high, row.low, row.close].every((v) => Number.isFinite(v) && v > 0)
+    && row.high >= Math.max(row.open, row.low, row.close)
+    && row.low <= Math.min(row.open, row.high, row.close);
+}
+
+function scoreDailyBar(row, preferred = false) {
+  let score = preferred ? 3 : 0;
+  if (!row || ![row.open, row.high, row.low, row.close].every((v) => Number.isFinite(v) && v > 0)) return -20;
+  if (row.high >= Math.max(row.open, row.low, row.close)) score += 5;
+  else score -= 8;
+  if (row.low <= Math.min(row.open, row.high, row.close)) score += 5;
+  else score -= 8;
+  if (Number.isFinite(row.volume) && row.volume >= 0) score += 1;
+  if (row.low > 0 && row.high / row.low < 1.45) score += 1;
+  return score;
+}
+
+function parseNaverSiseRows(text) {
+  const header = text.match(/\[\s*['"]?날짜['"]?[\s\S]*?\]/)?.[0] || '';
+  const closeFirstHeader = header.includes('종가') && (!header.includes('시가') || header.indexOf('종가') < header.indexOf('시가'));
+  return [...text.matchAll(/\[\s*['"]?(\d{8})['"]?\s*,([^\]]+)\]/g)]
+    .map((m) => {
+      const nums = m[2].split(',').map((x) => parseNumber(String(x).replace(/['"]/g, '')));
+      const t = new Date(`${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[1].slice(6, 8)}T00:00:00Z`).getTime();
+      const ohlc = { t, open: nums[0], high: nums[1], low: nums[2], close: nums[3], volume: nums[4] };
+      const closeFirst = { t, close: nums[0], open: nums[2], high: nums[3], low: nums[4], volume: nums[5] };
+      const chosen = scoreDailyBar(closeFirst, closeFirstHeader) > scoreDailyBar(ohlc, !closeFirstHeader) ? closeFirst : ohlc;
+      return validDailyBar(chosen) ? chosen : null;
+    })
+    .filter(Boolean);
+}
+
 function stooqSymbol(symbol) {
   const s = String(symbol || '').trim().toLowerCase();
   if (/^\d{6}(\.ks|\.kq)?$/i.test(s)) return `${s.replace(/\.(ks|kq)$/i, '')}.kr`;
@@ -92,15 +131,7 @@ async function fetchNaverSeries(symbol) {
   const res = await fetch(url, { headers: { accept: 'text/plain,*/*', 'user-agent': 'Mozilla/5.0 market-dashboard/1.0' } });
   if (!res.ok) return [];
   const text = await res.text();
-  const rows = [...text.matchAll(/\["(\d{8})",\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)/g)];
-  return rows.map((m) => ({
-    t: new Date(`${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[1].slice(6, 8)}T00:00:00Z`).getTime(),
-    close: Number(m[2]),
-    open: Number(m[3]),
-    high: Number(m[4]),
-    low: Number(m[5]),
-    volume: Number(m[6]),
-  })).filter((p) => Number.isFinite(p.close));
+  return parseNaverSiseRows(text);
 }
 
 function historyCandidates(symbol) {
