@@ -85,7 +85,19 @@ function koreanCode(symbol) {
   return /^\d{6}$/.test(code) ? code : '';
 }
 
-async function fetchNaverSummary(symbol) {
+const EMPTY_NAVER_FINANCE = {
+  revenueGrowth: null,
+  earningsGrowth: null,
+  revenuePrevious: null,
+  revenueLatest: null,
+  operatingIncomePrevious: null,
+  operatingIncomeLatest: null,
+  revenueSeries: [],
+  operatingIncomeSeries: [],
+  netIncomeSeries: [],
+};
+
+async function fetchNaverSummary(symbol, options = {}) {
   const code = koreanCode(symbol);
   if (!code) return null;
   try {
@@ -106,7 +118,7 @@ async function fetchNaverSummary(symbol) {
     const eps = Number(data.eps);
     const pbr = Number(data.pbr);
     const marketSum = Number(data.marketSum);
-    const finance = await fetchNaverFinance(code);
+    const finance = options.deep ? await fetchNaverFinance(code) : EMPTY_NAVER_FINANCE;
     const ps = Number.isFinite(marketSum) && finance.revenueLatest ? marketSum / (finance.revenueLatest * 100) : null;
     return {
       symbol,
@@ -130,7 +142,11 @@ async function fetchNaverSummary(symbol) {
       revenueLatest: finance.revenueLatest,
       operatingIncomePrevious: finance.operatingIncomePrevious,
       operatingIncomeLatest: finance.operatingIncomeLatest,
+      revenueSeries: finance.revenueSeries,
+      operatingIncomeSeries: finance.operatingIncomeSeries,
+      netIncomeSeries: finance.netIncomeSeries,
       marketSum,
+      dataSource: options.deep ? 'Naver Finance annual' : 'Naver Finance summary',
     };
   } catch {
     return null;
@@ -167,14 +183,6 @@ function growthFrom(values) {
 }
 
 async function fetchNaverFinance(code) {
-  const empty = {
-    revenueGrowth: null,
-    earningsGrowth: null,
-    revenuePrevious: null,
-    revenueLatest: null,
-    operatingIncomePrevious: null,
-    operatingIncomeLatest: null,
-  };
   try {
     const url = `https://m.stock.naver.com/api/stock/${code}/finance/annual`;
     const res = await fetch(url, {
@@ -184,10 +192,11 @@ async function fetchNaverFinance(code) {
         'user-agent': 'Mozilla/5.0 market-dashboard/1.0',
       },
     });
-    if (!res.ok) return empty;
+    if (!res.ok) return EMPTY_NAVER_FINANCE;
     const data = await res.json();
-    const revenues = valuesByActualPeriod(data, '매출액');
-    const profits = valuesByActualPeriod(data, '영업이익');
+    const revenues = valuesByActualPeriod(data, '\uB9E4\uCD9C\uC561');
+    const profits = valuesByActualPeriod(data, '\uC601\uC5C5\uC774\uC775');
+    const netIncome = valuesByActualPeriod(data, '\uB2F9\uAE30\uC21C\uC774\uC775');
     const revenuePrevious = revenues.at(-2)?.value ?? null;
     const revenueLatest = revenues.at(-1)?.value ?? null;
     const operatingIncomePrevious = profits.at(-2)?.value ?? null;
@@ -199,13 +208,16 @@ async function fetchNaverFinance(code) {
       revenueLatest,
       operatingIncomePrevious,
       operatingIncomeLatest,
+      revenueSeries: revenues,
+      operatingIncomeSeries: profits,
+      netIncomeSeries: netIncome,
     };
   } catch {
-    return empty;
+    return EMPTY_NAVER_FINANCE;
   }
 }
 
-async function enrichKoreanQuotes(rows, symbols) {
+async function enrichKoreanQuotes(rows, symbols, options = {}) {
   const out = rows.map((r) => ({ ...r }));
   out.forEach((row) => {
     if (!koreanCode(row.symbol)) return;
@@ -218,9 +230,10 @@ async function enrichKoreanQuotes(rows, symbols) {
     row.revenueGrowth = null;
   });
   const rowByCode = new Map(out.map((r) => [koreanCode(r.symbol), r]).filter(([code]) => code));
-  const targets = [...new Set(symbols.map(koreanCode).filter(Boolean))].slice(0, 40);
-  for (let i = 0; i < targets.length; i += 8) {
-    const settled = await Promise.allSettled(targets.slice(i, i + 8).map((code) => fetchNaverSummary(code)));
+  const targets = [...new Set(symbols.map(koreanCode).filter(Boolean))].slice(0, options.deep ? 20 : 80);
+  const batchSize = options.deep ? 6 : 16;
+  for (let i = 0; i < targets.length; i += batchSize) {
+    const settled = await Promise.allSettled(targets.slice(i, i + batchSize).map((code) => fetchNaverSummary(code, options)));
     settled.forEach((s, idx) => {
       if (s.status !== 'fulfilled' || !s.value) return;
       const code = targets[i + idx];
@@ -228,7 +241,7 @@ async function enrichKoreanQuotes(rows, symbols) {
       if (row) {
         Object.entries(s.value).forEach(([k, v]) => {
           if (v == null || v === '') return;
-          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenuePrevious', 'revenueLatest', 'operatingIncomePrevious', 'operatingIncomeLatest', 'marketSum', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
+          if (['trailingPE', 'trailingEps', 'priceToBook', 'priceToSalesTrailing12Months', 'earningsQuarterlyGrowth', 'revenueGrowth', 'operatingIncomeGrowth', 'revenuePrevious', 'revenueLatest', 'operatingIncomePrevious', 'operatingIncomeLatest', 'revenueSeries', 'operatingIncomeSeries', 'netIncomeSeries', 'marketSum', 'dataSource', 'regularMarketPrice', 'regularMarketChangePercent', 'regularMarketPreviousClose'].includes(k)) row[k] = v;
           else if (row[k] == null || row[k] === '') row[k] = v;
         });
         row.currency = 'KRW';
@@ -321,6 +334,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   const lite = String(req.query.lite || '') === '1';
+  const deep = String(req.query.deep || '') === '1';
   const raw = String(req.query.symbols || '');
   const symbols = raw
     .split(',')
@@ -334,11 +348,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchYahoo(symbols);
-    const rows = data?.quoteResponse?.result || [];
-    if (rows.length) {
-      const normalized = rows.map(normalizeQuote);
-      const enriched = lite ? normalized : await enrichKoreanQuotes(await enrichFundamentals(normalized), symbols);
+    const koreanSymbols = symbols.filter(koreanCode);
+    const foreignSymbols = symbols.filter((s) => !koreanCode(s));
+    const data = foreignSymbols.length ? await fetchYahoo(foreignSymbols) : { quoteResponse: { result: [] } };
+    const foreignRows = (data?.quoteResponse?.result || []).map(normalizeQuote);
+    const enrichedForeign = lite ? foreignRows : await enrichFundamentals(foreignRows);
+    const koreanBaseRows = koreanSymbols.map((symbol) => normalizeQuote({ symbol, currency: 'KRW', shortName: symbol }));
+    const combined = [...enrichedForeign, ...koreanBaseRows];
+    const enriched = koreanSymbols.length ? await enrichKoreanQuotes(combined, symbols, { deep: deep && !lite }) : combined;
+    if (enriched.length) {
       res.status(200).json({ quoteResponse: { result: enriched } });
       return;
     }
@@ -348,7 +366,7 @@ export default async function handler(req, res) {
     const fallback = await fetchFallback(symbols);
     const rows = fallback?.quoteResponse?.result || [];
     const normalized = rows.map(normalizeQuote);
-    const enriched = lite ? normalized : await enrichKoreanQuotes(await enrichFundamentals(normalized), symbols);
+    const enriched = lite ? normalized : await enrichKoreanQuotes(await enrichFundamentals(normalized), symbols, { deep });
     res.status(200).json({ quoteResponse: { result: enriched } });
   } catch (error) {
     res.status(502).json({ error: String(error?.message || error) });
