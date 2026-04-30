@@ -1,5 +1,6 @@
 const SEC_SUBMISSIONS = 'https://data.sec.gov/submissions';
 const SEC_ARCHIVES = 'https://www.sec.gov/Archives/edgar/data';
+const HOUSE_TRANSACTIONS = 'https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json';
 const UA = 'market-dashboard/1.0 contact@example.com';
 
 const DEFAULT_MANAGERS = [
@@ -10,6 +11,10 @@ const DEFAULT_MANAGERS = [
   { key: 'bridgewater', name: 'Bridgewater', person: 'Ray Dalio', cik: '0001350694' },
   { key: 'scion', name: 'Scion', person: 'Michael Burry', cik: '0001649339' },
   { key: 'tiger', name: 'Tiger Global', person: 'Chase Coleman', cik: '0001167483' },
+];
+
+const PUBLIC_DISCLOSURE_MANAGERS = [
+  { key: 'pelosi', name: 'Pelosi Tracker', person: 'Nancy Pelosi', sourceType: 'stock-act', matcher: /pelosi/i },
 ];
 
 const TICKER_HINTS = [
@@ -25,6 +30,7 @@ const TICKER_HINTS = [
   ['INVESCO S&P 500 EQUAL WEIGHT', 'RSP'], ['SPDR S&P 500 ETF', 'SPY'],
   ['INVESCO QQQ', 'QQQ'], ['ISHARES RUSSELL 2000', 'IWM'], ['ISHARES 20+ YEAR TREASURY', 'TLT'],
   ['ENERGY SELECT SECTOR', 'XLE'], ['TECHNOLOGY SELECT SECTOR', 'XLK'],
+  ['ALLIANCEBERNSTEIN', 'AB'], ['PALANTIR', 'PLTR'], ['TEMPUS AI', 'TEM'],
 ];
 
 function secHeaders() {
@@ -85,6 +91,109 @@ function resolveTicker(name) {
   const normalized = normalizeIssuer(name);
   const hit = TICKER_HINTS.find(([needle]) => normalized.includes(needle));
   return hit?.[1] || '';
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  const direct = new Date(text);
+  if (!Number.isNaN(direct.getTime())) return direct;
+  const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2]));
+  return null;
+}
+
+function dateIso(value) {
+  const d = parseDate(value);
+  return d ? d.toISOString().slice(0, 10) : '';
+}
+
+function amountMidpoint(amount) {
+  const nums = String(amount || '').match(/\$?[\d,]+/g)?.map((x) => Number(x.replace(/[^\d]/g, ''))).filter(Number.isFinite) || [];
+  if (!nums.length) return null;
+  if (nums.length === 1) return nums[0];
+  return (nums[0] + nums[1]) / 2;
+}
+
+function publicTradeTicker(row) {
+  const t = String(row.ticker || row.symbol || '').replace(/[^A-Z.]/gi, '').toUpperCase();
+  if (t && t !== '--') return t;
+  return resolveTicker(row.asset_description || row.assetDescription || row.issuer || '');
+}
+
+function publicTradePerson(row) {
+  return String(row.representative || row.name || row.office || `${row.first_name || ''} ${row.last_name || ''}`).trim();
+}
+
+async function loadPublicDisclosureManager(manager) {
+  const data = await getJson(HOUSE_TRANSACTIONS, 15000);
+  const rows = Array.isArray(data) ? data : [];
+  const filtered = rows
+    .filter((row) => manager.matcher.test(publicTradePerson(row)))
+    .map((row) => ({
+      ...row,
+      ticker: publicTradeTicker(row),
+      tradeDate: dateIso(row.transaction_date || row.transactionDate),
+      disclosureDate: dateIso(row.disclosure_date || row.disclosureDate || row.filing_date),
+      amountUsd: amountMidpoint(row.amount),
+      tradeType: String(row.type || '').toLowerCase(),
+      issuer: row.asset_description || row.assetDescription || row.issuer || '',
+    }))
+    .filter((row) => row.ticker)
+    .sort((a, b) => (parseDate(b.disclosureDate || b.tradeDate)?.getTime() || 0) - (parseDate(a.disclosureDate || a.tradeDate)?.getTime() || 0))
+    .slice(0, 40);
+
+  const byTicker = new Map();
+  filtered.forEach((row) => {
+    const key = row.ticker;
+    if (!byTicker.has(key)) {
+      byTicker.set(key, {
+        issuer: row.issuer || key,
+        title: 'STOCK Act',
+        cusip: `PUBLIC-${key}`,
+        ticker: key,
+        value: 0,
+        valueUsd: 0,
+        shares: null,
+        weightPct: null,
+        statusKey: 'held',
+        statusLabel: '공시',
+        transactions: 0,
+        latestTradeDate: row.tradeDate,
+        amountLabel: row.amount || '',
+      });
+    }
+    const item = byTicker.get(key);
+    const usd = row.amountUsd || 0;
+    const isSale = /sale|sold/i.test(row.tradeType);
+    const isBuy = /purchase|buy|bought/i.test(row.tradeType);
+    item.valueUsd += Math.max(usd, 0);
+    item.value += Math.max(usd, 0) / 1000;
+    item.transactions += 1;
+    item.latestTradeDate = row.tradeDate || item.latestTradeDate;
+    item.statusKey = isSale && !isBuy ? 'reduced' : isBuy ? 'new' : item.statusKey;
+    item.statusLabel = item.statusKey === 'reduced' ? '매도' : item.statusKey === 'new' ? '매수' : '공시';
+    item.amountLabel = row.amount || item.amountLabel;
+  });
+
+  const holdings = [...byTicker.values()].sort((a, b) => (b.valueUsd || 0) - (a.valueUsd || 0));
+  const totalValue = holdings.reduce((sum, row) => sum + (row.value || 0), 0);
+  const max = Math.max(...holdings.map((row) => row.value || 0), 0);
+  const enriched = holdings.map((row) => ({ ...row, weightPct: totalValue ? (row.value / totalValue) * 100 : max ? (row.value / max) * 100 : null }));
+
+  return {
+    ...manager,
+    latest: {
+      accessionNumber: 'STOCK-ACT',
+      filingDate: filtered[0]?.disclosureDate || '',
+      reportDate: filtered[0]?.tradeDate || filtered[0]?.disclosureDate || '',
+      infoTableUrl: HOUSE_TRANSACTIONS,
+      totalValue,
+      holdingsCount: enriched.length,
+    },
+    previous: null,
+    holdings: enriched,
+  };
 }
 
 function parseInfoTable(xml) {
@@ -279,14 +388,17 @@ export default async function handler(req, res) {
     .split(',')
     .map((x) => x.trim())
     .filter(Boolean);
-  const selected = keys.length ? DEFAULT_MANAGERS.filter((m) => keys.includes(m.key)) : DEFAULT_MANAGERS;
+  const allManagers = [...DEFAULT_MANAGERS, ...PUBLIC_DISCLOSURE_MANAGERS];
+  const selected = keys.length ? allManagers.filter((m) => keys.includes(m.key)) : allManagers;
 
   try {
-    const managers = await mapLimit(selected, 3, loadManager);
+    const managers = await mapLimit(selected, 3, (manager) => (
+      manager.sourceType === 'stock-act' ? loadPublicDisclosureManager(manager) : loadManager(manager)
+    ));
     const okManagers = managers.filter((m) => !m.error);
     res.status(200).json({
       generatedAt: new Date().toISOString(),
-      caveat: '13F는 분기 말 보유 주식의 지연 공시입니다. 숏, 현금, 해외 일부 자산, 파생 포지션은 누락될 수 있어 매수 신호가 아니라 아이디어 출처로만 봅니다.',
+      caveat: '13F와 STOCK Act 공시는 지연 공개 자료입니다. 현금, 숏, 파생·비상장 포지션이 빠질 수 있어 매수 신호가 아니라 아이디어 출처로만 봅니다.',
       managers: managers.map((manager) => ({
         ...manager,
         holdings: (manager.holdings || []).slice(0, limit),
