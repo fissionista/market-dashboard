@@ -762,6 +762,7 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
 .sector-grid{display:block}.sector-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}.sector-head{margin-bottom:8px}.sector-name{font-size:18px;font-weight:950}.sector-country-lbl{font-size:12px;color:#475467;margin:12px 0 6px;text-transform:none;letter-spacing:0}
 .watch-list{display:grid;gap:6px}.watch-row{display:grid;grid-template-columns:minmax(120px,1.2fr) .85fr .7fr .7fr .8fr .75fr auto;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px 11px;min-width:0}.watch-row:hover{border-color:#98a2b3;background:#fcfcfd}.watch-main{min-width:0}.watch-name{font-size:14px;font-weight:950;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-meta{font-size:11px;color:#667085;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-cell{font-size:12px;color:#475467;min-width:0}.watch-cell strong{display:block;font-size:15px;color:#111827;white-space:nowrap}.watch-cell .muted{color:#98a2b3}.watch-actions{display:flex;gap:4px;justify-content:flex-end}.scard-actions{display:flex;gap:4px}
 .scanner-board{display:grid;gap:12px}.scanner-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.scanner-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.scanner-kpi .k{font-size:11px;color:#667085;font-weight:800}.scanner-kpi .v{font-size:24px;font-weight:950;color:#111827;margin-top:4px}.scanner-row{display:grid;grid-template-columns:minmax(150px,1.2fr) .72fr .82fr 1.15fr 1fr .75fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 12px}.scanner-row:hover{border-color:#98a2b3;background:#fcfcfd}.scanner-name{font-size:15px;font-weight:950;color:#111827}.scanner-meta{font-size:11px;color:#667085;margin-top:2px}.scanner-cell{font-size:12px;color:#475467;min-width:0}.scanner-cell strong{display:block;font-size:15px;color:#111827}.scanner-patterns{display:flex;gap:4px;flex-wrap:wrap}.scanner-source{font-size:11px;color:#667085;line-height:1.55}.scanner-empty{background:#fff;border:1px dashed #cfd8e6;border-radius:12px;padding:22px;text-align:center;color:#667085;font-weight:800}.scanner-filter-note{font-size:12px;color:#667085;line-height:1.55}.scanner-load{display:flex;align-items:center;gap:8px;color:#475467;font-size:13px;font-weight:800}.scanner-load:before{content:'';width:10px;height:10px;border-radius:999px;background:#2f6fed;box-shadow:0 0 0 4px rgba(47,111,237,.12)}
+.leader-etf-full{display:block!important;width:100%;max-width:100%}.leader-etf-full .sector-wrap{width:100%;box-sizing:border-box}.leader-etf-full .watch-row{grid-template-columns:minmax(180px,1.35fr) .9fr .9fr .7fr .75fr auto}.tabs{max-width:760px}
 .data-note{font-size:11px;color:#667085;line-height:1.45}.missing-reason{color:#b54708;font-weight:800}
 .capture-summary{width:720px;background:#f6f8fb}.capture-summary-card{border-radius:16px;box-shadow:none}.capture-summary-grid{grid-template-columns:repeat(4,1fr)}.capture-risk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:12px}.capture-risk{border:1px solid #e5e7eb;border-left:4px solid #98a2b3;border-radius:10px;padding:9px;background:#fff}.capture-risk.g{border-left-color:#12b76a}.capture-risk.y{border-left-color:#f59e0b}.capture-risk.r{border-left-color:#d92d20}.capture-risk.b{border-left-color:#2563eb}.capture-risk-name{font-size:10px;font-weight:900;color:#667085}.capture-risk-val{font-size:12px;font-weight:950;color:#111827;margin-top:3px}.capture-disclaimer{margin-top:10px;font-size:10px;color:#98a2b3;line-height:1.45;text-align:left}
 @media(max-width:900px){.brief-grid{grid-template-columns:repeat(3,1fr)}.risk-axis-grid{grid-template-columns:repeat(2,1fr)}.watch-row{grid-template-columns:1fr auto;gap:6px}.watch-cell{display:none}.watch-actions{grid-column:1/3;justify-content:flex-start;border-top:1px solid var(--border);padding-top:7px}.capture-risk-grid{grid-template-columns:repeat(2,1fr)}.scanner-summary{grid-template-columns:repeat(2,1fr)}.scanner-row{grid-template-columns:1fr auto}.scanner-cell{display:none}.scanner-patterns{grid-column:1/3}.scanner-row .watch-actions{grid-column:1/3}}
@@ -2202,6 +2203,40 @@ var scannerSwitchBase=switchTab;
 switchTab=function(name,el){ensureScannerLayout();scannerSwitchBase(name,el);if(name==='candidates')fetchScannerIfNeeded()};
 var scannerRenderAllBase=renderAll;
 renderAll=function(){scannerRenderAllBase();ensureScannerLayout();renderScanner()};
+/* Candidate tab and ETF layout fixes */
+function fixPrimaryTabs(){
+ const names={dashboard:'대시보드',sectors:'관심섹터',signals:'경계신호',candidates:'후보 발굴',history:'히스토리'};
+ document.querySelectorAll('.tabs .tab').forEach(tab=>{
+  const on=tab.getAttribute('onclick')||'';
+  Object.entries(names).forEach(([key,label])=>{if(on.includes(`'${key}'`))tab.textContent=label});
+ });
+}
+var scannerLayoutFixBase=ensureScannerLayout;
+ensureScannerLayout=function(){
+ scannerLayoutFixBase();
+ fixPrimaryTabs();
+ const leader=document.getElementById('leader-etfs');
+ if(leader){
+  leader.classList.remove('grid','g4','g3','g2','g5');
+  leader.classList.add('leader-etf-full');
+ }
+};
+var leaderEtfFixBase=renderLeaderEtfs;
+renderLeaderEtfs=function(){
+ const box=document.getElementById('leader-etfs');if(!box)return;
+ box.classList.remove('grid','g4','g3','g2','g5');
+ box.classList.add('leader-etf-full');
+ const rows=LEADER_ETFS.map(e=>{const d=live[e.ticker]||live[normalizeSymbol(e.ticker)]||{},p=d.price??null,day=d.changePct??null,high=d.high52w??getHistoryHigh(e.ticker),gap=p&&high?(p/high-1)*100:null;return {...e,d,p,day,high,gap}}).filter(x=>x.p!=null&&x.high!=null&&x.gap!=null);
+ const selected=rows.filter(x=>x.gap>=-1.5).sort((a,b)=>b.gap-a.gap),fallback=rows.filter(x=>x.gap<-1.5).sort((a,b)=>b.gap-a.gap).slice(0,12),show=selected.length?selected:fallback;
+ const us=show.filter(x=>x.country==='US'),kr=show.filter(x=>x.country==='KR'),etc=show.filter(x=>x.country!=='US'&&x.country!=='KR');
+ const row=x=>`<div class="watch-row clickable" onclick="openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')"><div class="watch-main"><div class="watch-name">${x.gap>=0?'🚀 ':''}${htmlSafe(x.name)}</div><div class="watch-meta">${htmlSafe(x.ticker)} · ${htmlSafe(x.theme||x.country)}</div></div><div class="watch-cell"><strong>${x.gap>=0?'52주 신고가':'고점 '+x.gap.toFixed(1)+'%'}</strong><span>${selected.length?'신고가권':'가까운 후보'}</span></div><div class="watch-cell"><strong>${fmtStockPrice(x.high,x.d.currency||(/[.](KS|KQ)$/i.test(x.ticker)?'KRW':'USD'))}</strong><span>52주 고점</span></div><div class="watch-cell"><strong style="color:${(x.day??0)>=0?'var(--red)':'var(--blue)'}">${x.day!=null?fmtPct(x.day):'—'}</strong><span>일간</span></div><div class="watch-cell"><span class="chip ${x.gap>=0?'ch-r':x.gap>=-1.5?'ch-p':'ch-b'}">${x.gap>=0?'신고가':'신고가권'}</span></div><div class="watch-actions"><button class="btn mini-btn" onclick="event.stopPropagation();openChartByTicker('${jsArg(x.ticker)}','${jsArg(x.name)}','${jsArg(x.country)}')">차트</button></div></div>`;
+ const group=(label,items)=>items.length?`<div class="sector-country-lbl">${label}</div><div class="watch-list">${items.map(row).join('')}</div>`:'';
+ box.innerHTML=`<div class="sector-wrap leader-etf-card"><div class="sector-head"><div><div class="sector-name">52주 신고가 섹터 ETF</div><div class="data-note">미국·한국 ETF 중 52주 신고가 또는 고점 -1.5% 이내를 우선 표시합니다. PC에서는 전체 폭 리스트로 보여 잘리지 않게 했습니다.</div></div><span class="chip ch-p">${selected.length?'신고가권':'대기 후보'}</span></div>${show.length?`${group('미국 ETF',us)}${group('한국 ETF',kr)}${group('기타',etc)}`:'<div class="data-note">ETF 가격 데이터 대기 중입니다.</div>'}</div>`;
+};
+var switchTabFixBase=switchTab;
+switchTab=function(name,el){switchTabFixBase(name,el);fixPrimaryTabs()};
+var renderAllFixBase=renderAll;
+renderAll=function(){renderAllFixBase();fixPrimaryTabs();const leader=document.getElementById('leader-etfs');if(leader){leader.classList.remove('grid','g4','g3','g2','g5');leader.classList.add('leader-etf-full')}};
 function init(){document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});buildManualFields();buildThresholdFields();ensureP0Layout();load();renderAll();fetchAll(false)}
 init();
 </script>
