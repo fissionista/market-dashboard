@@ -762,7 +762,7 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
 .sector-grid{display:block}.sector-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}.sector-head{margin-bottom:8px}.sector-name{font-size:18px;font-weight:950}.sector-country-lbl{font-size:12px;color:#475467;margin:12px 0 6px;text-transform:none;letter-spacing:0}
 .watch-list{display:grid;gap:6px}.watch-row{display:grid;grid-template-columns:minmax(120px,1.2fr) .85fr .7fr .7fr .8fr .75fr auto;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px 11px;min-width:0}.watch-row:hover{border-color:#98a2b3;background:#fcfcfd}.watch-main{min-width:0}.watch-name{font-size:14px;font-weight:950;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-meta{font-size:11px;color:#667085;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-cell{font-size:12px;color:#475467;min-width:0}.watch-cell strong{display:block;font-size:15px;color:#111827;white-space:nowrap}.watch-cell .muted{color:#98a2b3}.watch-actions{display:flex;gap:4px;justify-content:flex-end}.scard-actions{display:flex;gap:4px}
 .scanner-board{display:grid;gap:12px}.scanner-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.scanner-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.scanner-kpi .k{font-size:11px;color:#667085;font-weight:800}.scanner-kpi .v{font-size:24px;font-weight:950;color:#111827;margin-top:4px}.scanner-row{display:grid;grid-template-columns:minmax(150px,1.2fr) .72fr .82fr 1.15fr 1fr .75fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 12px}.scanner-row:hover{border-color:#98a2b3;background:#fcfcfd}.scanner-name{font-size:15px;font-weight:950;color:#111827}.scanner-meta{font-size:11px;color:#667085;margin-top:2px}.scanner-cell{font-size:12px;color:#475467;min-width:0}.scanner-cell strong{display:block;font-size:15px;color:#111827}.scanner-patterns{display:flex;gap:4px;flex-wrap:wrap}.scanner-source{font-size:11px;color:#667085;line-height:1.55}.scanner-empty{background:#fff;border:1px dashed #cfd8e6;border-radius:12px;padding:22px;text-align:center;color:#667085;font-weight:800}.scanner-filter-note{font-size:12px;color:#667085;line-height:1.55}.scanner-load{display:flex;align-items:center;gap:8px;color:#475467;font-size:13px;font-weight:800}.scanner-load:before{content:'';width:10px;height:10px;border-radius:999px;background:#2f6fed;box-shadow:0 0 0 4px rgba(47,111,237,.12)}
-.leader-etf-full{display:block!important;width:100%;max-width:100%}.leader-etf-full .sector-wrap{width:100%;box-sizing:border-box}.leader-etf-full .watch-row{grid-template-columns:minmax(180px,1.35fr) .9fr .9fr .7fr .75fr auto}.tabs{max-width:760px}
+.leader-etf-section{width:100%}.leader-etf-full,#leader-etfs{display:block!important;width:100%!important;max-width:none!important;grid-template-columns:none!important}.leader-etf-full .sector-wrap,#leader-etfs .sector-wrap{width:100%;box-sizing:border-box}.leader-etf-full .watch-row,#leader-etfs .watch-row{grid-template-columns:minmax(220px,1.45fr) .9fr .9fr .7fr .75fr auto}.tabs{max-width:820px}
 .data-note{font-size:11px;color:#667085;line-height:1.45}.missing-reason{color:#b54708;font-weight:800}
 .capture-summary{width:720px;background:#f6f8fb}.capture-summary-card{border-radius:16px;box-shadow:none}.capture-summary-grid{grid-template-columns:repeat(4,1fr)}.capture-risk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:12px}.capture-risk{border:1px solid #e5e7eb;border-left:4px solid #98a2b3;border-radius:10px;padding:9px;background:#fff}.capture-risk.g{border-left-color:#12b76a}.capture-risk.y{border-left-color:#f59e0b}.capture-risk.r{border-left-color:#d92d20}.capture-risk.b{border-left-color:#2563eb}.capture-risk-name{font-size:10px;font-weight:900;color:#667085}.capture-risk-val{font-size:12px;font-weight:950;color:#111827;margin-top:3px}.capture-disclaimer{margin-top:10px;font-size:10px;color:#98a2b3;line-height:1.45;text-align:left}
 @media(max-width:900px){.brief-grid{grid-template-columns:repeat(3,1fr)}.risk-axis-grid{grid-template-columns:repeat(2,1fr)}.watch-row{grid-template-columns:1fr auto;gap:6px}.watch-cell{display:none}.watch-actions{grid-column:1/3;justify-content:flex-start;border-top:1px solid var(--border);padding-top:7px}.capture-risk-grid{grid-template-columns:repeat(2,1fr)}.scanner-summary{grid-template-columns:repeat(2,1fr)}.scanner-row{grid-template-columns:1fr auto}.scanner-cell{display:none}.scanner-patterns{grid-column:1/3}.scanner-row .watch-actions{grid-column:1/3}}
@@ -788,6 +788,7 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
     <div class="tab active" onclick="switchTab('dashboard',this)">대시보드</div>
     <div class="tab" onclick="switchTab('sectors',this)">관심 섹터</div>
     <div class="tab" onclick="switchTab('signals',this)">경계신호</div>
+    <div class="tab" data-tab-candidates="1" onclick="switchTab('candidates',this)">후보 발굴</div>
     <div class="tab" onclick="switchTab('history',this)">히스토리</div>
   </div>
   <div class="tab-content active" id="tab-dashboard">
@@ -827,7 +828,7 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
     </div>
   </div>
   <div class="tab-content" id="tab-sectors">
-    <div class="section"><div class="section-title">주도 섹터 ETF</div><div class="grid g4" id="leader-etfs"></div></div>
+    <div class="section leader-etf-section"><div class="section-title">주도 섹터 ETF</div><div class="leader-etf-full" id="leader-etfs"></div></div>
     <div class="toolbar">
       <div class="form-row">
         <div class="field"><label>사용자</label><select id="profileSelect" onchange="selectProfile(this.value)"></select></div>
@@ -857,6 +858,21 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
     <div class="signal-grid">
       <div class="section"><div class="section-title">경계신호 / 역발상 체크</div><div id="riskChecklist"></div><div class="signal-list" id="signalList"></div></div>
       <div class="section"><div class="section-title">시장 체온계</div><div class="grid g2" id="signalMeters"></div><div class="signal-panel" id="signalPanels"></div></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-candidates">
+    <div class="section">
+      <div class="section-title">후보 발굴</div>
+      <div class="toolbar">
+        <div class="form-row">
+          <div class="field"><label>스캔 범위</label><select id="scannerScope" onchange="fetchScanner(true)"><option value="all">코스피200 + 코스닥150</option><option value="kospi200">코스피200</option><option value="kosdaq150">코스닥150</option></select></div>
+          <div class="field"><label>패턴</label><select id="scannerPattern" onchange="fetchScanner(true)"><option value="all">전체 패턴</option><option value="newHigh">52주 신고가/신고가권</option><option value="stage2">Stage 2</option><option value="vcp">VCP 응축</option><option value="volumeRecovery">거래량 회복</option><option value="foreignStrong">외국인 5일 강도</option></select></div>
+          <div class="field"><label>유동성</label><select id="scannerMinValue" onchange="fetchScanner(true)"><option value="3000000000">20일 평균 30억 이상</option><option value="5000000000" selected>20일 평균 50억 이상</option><option value="10000000000">20일 평균 100억 이상</option><option value="30000000000">20일 평균 300억 이상</option></select></div>
+          <button class="btn btn-blue" onclick="fetchScanner(true)">스캔 실행</button>
+        </div>
+        <div class="scanner-filter-note">먼저 유동성 필터를 통과한 종목만 봅니다. 52주 신고가권, Stage 2, VCP 응축, 거래량 회복을 자동 탐지합니다. 외국인 5일 순매수는 외국인 보유율 변화 기반 추정치입니다.</div>
+      </div>
+      <div id="scannerContent" class="scanner-board"></div>
     </div>
   </div>
   <div class="tab-content" id="tab-history">
@@ -1290,7 +1306,7 @@ function backgroundQuoteSymbols(core=[]){
  const sectorTickers=sectors().flatMap(s=>s.stocks.map(st=>st.ticker.toUpperCase().trim())).filter(Boolean);
  return uniqueSymbols([...LEADER_ETFS.map(e=>e.ticker),...HIGH_WATCH.map(e=>e.ticker),...sectorTickers]).filter(s=>!coreSet.has(String(s).toUpperCase()));
 }
-function isKoreanTicker(s){return /^\d{6}\.(KS|KQ)$/i.test(String(s||''))}
+function isKoreanTicker(s){return /^\d{6}(\.(KS|KQ))?$/i.test(String(s||''))}
 function initialHistorySymbols(){
  const chart=(settings.tvItems||DEFAULT_TV).filter(x=>x.on).slice(0,6).map(x=>SYM[x.key]).filter(Boolean);
  return uniqueSymbols(['^GSPC','^IXIC','^KS11','^KQ11','^TNX','^FVX','^IRX','^VIX','^MOVE','HYG','KRW=X','DX-Y.NYB','JPY=X','CL=F','GC=F','BTC-USD',...chart]);
@@ -1318,7 +1334,8 @@ async function fetchBackgroundQuotes(symbols){
   fetchPart(list.filter(isKoreanTicker),32),
   fetchPart(list.filter(s=>!isKoreanTicker(s)),24)
  ]);
- const leaderHistory=uniqueSymbols([...LEADER_ETFS.map(e=>e.ticker),...HIGH_WATCH.map(e=>e.ticker)]).filter(s=>!historySeriesFor(s).length);
+ const koreanSectorHistory=list.filter(isKoreanTicker);
+ const leaderHistory=uniqueSymbols([...LEADER_ETFS.map(e=>e.ticker),...HIGH_WATCH.map(e=>e.ticker),...koreanSectorHistory]).filter(s=>!historySeriesFor(s).length);
  if(leaderHistory.length&&token===backgroundFetchToken){
   const data=await fetchHistoryBatch(leaderHistory);
   if(token!==backgroundFetchToken)return;
@@ -1976,7 +1993,7 @@ var p0RiskMeta=(parts)=>parts.filter(Boolean).join(' · ')||'데이터 대기';
 ensureP0Layout=function(){
  const logo=document.querySelector('.logo');if(logo)logo.innerHTML='Market <span>Check</span>';
  const btns=document.querySelectorAll('.hdr-right .btn');if(btns[0])btns[0].textContent='새로고침';if(btns[1])btns[1].textContent='캡쳐';if(btns[2])btns[2].textContent='설정';
- const tabs=document.querySelectorAll('.tab');['대시보드','관심섹터','경계신호','히스토리'].forEach((t,i)=>{if(tabs[i])tabs[i].textContent=t});
+ const tabs=document.querySelectorAll('.tab');['대시보드','관심섹터','경계신호','후보 발굴','히스토리'].forEach((t,i)=>{if(tabs[i])tabs[i].textContent=t});
  const dash=document.getElementById('dashboardCapture');if(dash&&!document.getElementById('marketBrief'))dash.insertAdjacentHTML('afterbegin','<div class="market-brief" id="marketBrief"></div>');
  const setTitle=(id,txt)=>{const el=document.getElementById(id),sec=el?.closest('.section');const title=sec?.querySelector('.section-title');if(title)title.textContent=txt};
  setTitle('global-indices','글로벌 지수');setTitle('yield-card','금리 / 채권');setTitle('sentiment-card','심리 / 변동성');setTitle('forex','환율');setTitle('commodities','원자재 / 암호화폐');setTitle('leader-etfs','주도섹터 ETF');setTitle('marketJudgement','마켓 포지션 보드');setTitle('riskChecklist','경계신호 5축 점검');setTitle('signalMeters','시장 체온계');
@@ -2109,9 +2126,29 @@ cashSentimentCard=function(){
  const mmf=marketExtras?.mmf,aaii=marketExtras?.aaii,missing=marketExtras?._error?'API 연결 확인':'데이터 대기';
  return `<div class="mini-card"><div class="mini-head"><div class="mini-title">대기자금 / 개인심리</div><span class="chip ${marketExtras?._error?'ch-r':'ch-b'}">보조지표</span></div><div class="mini-row"><span>MMF 현금</span><strong>${mmf?.totalText||missing}</strong></div><div class="mini-row"><span>AAII 개인심리</span><strong>${aaii?.spreadText||missing}</strong></div><div class="mini-note">현금이 많아도 주식 유입을 보장하진 않아서 과열/공포 보조 신호로만 봅니다.</div></div>`;
 };
+function translatePredictionQuestionClient(question){
+ const q=String(question||'');
+ if(!q)return '';
+ const rules=[
+  [/fed|fomc|federal reserve|rate cut|interest rate/i,'미국 기준금리/Fed 관련 예측입니다. 금리 인하·동결·인상 가능성을 시장이 어떻게 보는지 참고합니다.'],
+  [/recession|gdp|unemployment|jobless|payroll/i,'미국 경기침체 또는 고용 관련 예측입니다. 경기 둔화 리스크를 보는 보조 지표로만 활용합니다.'],
+  [/inflation|cpi|pce/i,'물가/CPI/PCE 관련 예측입니다. 금리와 성장주 부담을 판단할 때 함께 봅니다.'],
+  [/bitcoin|btc|crypto/i,'비트코인/암호화폐 관련 예측입니다. 위험자산 선호와 과열 여부를 참고합니다.'],
+  [/oil|wti|brent|opec/i,'유가/원유 관련 예측입니다. 인플레이션과 원자재 리스크를 볼 때 참고합니다.'],
+  [/war|ceasefire|ukraine|russia|israel|iran|china|taiwan/i,'지정학 리스크 관련 예측입니다. 변동성 확대 가능성을 보는 참고 지표입니다.'],
+  [/election|president|trump|biden|congress/i,'정치 이벤트 관련 예측입니다. 정책 불확실성이나 섹터별 수혜 가능성을 볼 때 참고합니다.']
+ ];
+ const found=rules.find(([re])=>re.test(q));
+ return found?found[1]:'폴리마켓 상위 거래량 이벤트입니다. 질문 원문을 함께 보고 시장 심리 참고용으로만 활용합니다.';
+}
 predictionCard=function(){
  const p=marketExtras?.prediction;
- return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 참고 확률</div><span class="chip ${marketExtras?._error?'ch-r':p?.chip||'ch-b'}">${marketExtras?._error?'API 확인':p?.label||'데이터 대기'}</span></div><div class="mini-note">${marketExtras?._error?'api/market-extras.js가 배포되어야 자동 표시됩니다.':p?.note||'Polymarket 거래량 상위 매크로 이벤트 1개의 현재 확률입니다. 시장 심리 참고용이며 매수/매도 신호는 아닙니다.'}</div></div>`;
+ const rawQuestion=p?.question||((p?.note||'').match(/"([^"]+)"/)?.[1])||p?.note||'';
+ const original=rawQuestion?`<div class="mini-row"><span>원문</span><strong>${htmlSafe(rawQuestion)}</strong></div>`:'';
+ const koText=p?.questionKo||translatePredictionQuestionClient(rawQuestion)||(p?'폴리마켓 상위 거래량 이벤트입니다. 질문 원문을 함께 보고 시장 심리 참고용으로만 활용합니다.':'예측시장 데이터가 들어오면 자동으로 원문과 한글 해석을 표시합니다.');
+ const ko=`<div class="mini-row"><span>한글 해석</span><strong>${htmlSafe(koText)}</strong></div>`;
+ const fallback='Polymarket 거래량 상위 매크로 이벤트 1개의 현재 확률입니다. 시장 심리 참고용이며 매수/매도 신호는 아닙니다.';
+ return `<div class="mini-card"><div class="mini-head"><div class="mini-title">예측시장 참고 확률</div><span class="chip ${marketExtras?._error?'ch-r':p?.chip||'ch-b'}">${marketExtras?._error?'API 확인':p?.label||'데이터 대기'}</span></div>${original}${ko}<div class="mini-note">${marketExtras?._error?'api/market-extras.js가 배포되어야 자동 표시됩니다.':p?.note||fallback}</div></div>`;
 };
 earningsSeasonCard=function(){
  const e=earningsSeasonInfo(),now=new Date(),cur=now.getMonth()+1,seasonMonths=new Set([1,4,7,10]),preMonths=new Set([3,6,9,12]);

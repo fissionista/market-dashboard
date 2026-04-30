@@ -127,6 +127,22 @@ async function getAaii() {
   }
 }
 
+function translatePredictionQuestion(question) {
+  const q = String(question || '').trim();
+  if (!q) return '';
+  const rules = [
+    [/fed|fomc|federal reserve|rate cut|interest rate/i, '미국 기준금리/Fed 관련 예측입니다. 금리 인하·동결·인상 가능성을 시장이 어떻게 보는지 참고합니다.'],
+    [/recession|gdp|unemployment|jobless|payroll/i, '미국 경기침체 또는 고용 관련 예측입니다. 경기 둔화 리스크를 보는 보조 지표로만 활용합니다.'],
+    [/inflation|cpi|pce/i, '물가/CPI/PCE 관련 예측입니다. 금리와 성장주 부담을 판단할 때 함께 봅니다.'],
+    [/bitcoin|btc|crypto/i, '비트코인/암호화폐 관련 예측입니다. 위험자산 선호와 과열 여부를 참고합니다.'],
+    [/oil|wti|brent|opec/i, '유가/원유 관련 예측입니다. 인플레이션과 원자재 리스크를 볼 때 참고합니다.'],
+    [/war|ceasefire|ukraine|russia|israel|iran|china|taiwan/i, '지정학 리스크 관련 예측입니다. 변동성 확대 가능성을 보는 참고 지표입니다.'],
+    [/election|president|trump|biden|congress/i, '정치 이벤트 관련 예측입니다. 정책 불확실성이나 섹터별 수혜 가능성을 볼 때 참고합니다.'],
+  ];
+  const found = rules.find(([re]) => re.test(q));
+  return found ? found[1] : '폴리마켓 상위 거래량 이벤트입니다. 질문 원문을 함께 보고 시장 심리 참고용으로만 활용합니다.';
+}
+
 async function getPrediction() {
   try {
     const data = await getJson('https://gamma-api.polymarket.com/markets?limit=100&active=true&closed=false&order=volume24hr&ascending=false');
@@ -144,6 +160,7 @@ async function getPrediction() {
       label: Number.isFinite(price) ? `${Math.round(price * 100)}%` : '연결됨',
       chip: Number.isFinite(price) && price >= .7 ? 'ch-y' : 'ch-b',
       question: macro.question || macro.slug,
+      questionKo: translatePredictionQuestion(macro.question || macro.slug),
       note: `Polymarket 거래량 상위 매크로 이벤트: "${macro.question || macro.slug}"`,
     };
   } catch {
