@@ -217,9 +217,27 @@ async function mapLimit(items, limit, worker) {
 function buildConsensus(managers) {
   const map = new Map();
   managers.forEach((manager) => {
+    const perManager = new Map();
     (manager.holdings || []).forEach((row) => {
       const key = row.ticker || row.cusip;
       if (!key) return;
+      if (!perManager.has(key)) {
+        perManager.set(key, {
+          key,
+          ticker: row.ticker,
+          issuer: row.issuer,
+          cusip: row.cusip,
+          value: 0,
+          weightPct: 0,
+          rows: 0,
+        });
+      }
+      const aggregate = perManager.get(key);
+      aggregate.value += row.value || 0;
+      aggregate.weightPct += row.weightPct || 0;
+      aggregate.rows += 1;
+    });
+    perManager.forEach((row, key) => {
       if (!map.has(key)) {
         map.set(key, {
           key,
@@ -232,7 +250,7 @@ function buildConsensus(managers) {
         });
       }
       const item = map.get(key);
-      item.managers.push({ key: manager.key, name: manager.name, person: manager.person, weightPct: row.weightPct, value: row.value });
+      item.managers.push({ key: manager.key, name: manager.name, person: manager.person, weightPct: row.weightPct, value: row.value, rows: row.rows });
       item.totalValue += row.value || 0;
       item.totalWeight += row.weightPct || 0;
     });
@@ -240,6 +258,7 @@ function buildConsensus(managers) {
   return [...map.values()]
     .filter((row) => row.managers.length >= 2)
     .sort((a, b) => b.managers.length - a.managers.length || b.totalValue - a.totalValue)
+    .map((row) => ({ ...row, managerCount: row.managers.length, totalValueUsd: row.totalValue * 1000 }))
     .slice(0, 30);
 }
 
