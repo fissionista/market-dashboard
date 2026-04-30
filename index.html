@@ -761,9 +761,10 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
 .risk-axis-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.risk-axis{background:#fff;border:1px solid var(--border);border-left:4px solid #d0d5dd;border-radius:10px;padding:12px;min-height:120px}.risk-axis.g{border-left-color:var(--green)}.risk-axis.y{border-left-color:var(--yellow)}.risk-axis.r{border-left-color:var(--red)}.risk-axis.b{border-left-color:var(--blue)}.risk-axis-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.risk-axis-name{font-size:13px;font-weight:950;color:#111827}.risk-axis-status{font-size:11px;font-weight:900}.risk-axis-meta{font-size:12px;font-weight:850;color:#344054;line-height:1.4}.risk-axis-rule{font-size:11px;color:#667085;line-height:1.45;margin-top:6px}.risk-axis-missing{margin-top:6px;font-size:11px;color:#b54708}
 .sector-grid{display:block}.sector-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}.sector-head{margin-bottom:8px}.sector-name{font-size:18px;font-weight:950}.sector-country-lbl{font-size:12px;color:#475467;margin:12px 0 6px;text-transform:none;letter-spacing:0}
 .watch-list{display:grid;gap:6px}.watch-row{display:grid;grid-template-columns:minmax(120px,1.2fr) .85fr .7fr .7fr .8fr .75fr auto;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px 11px;min-width:0}.watch-row:hover{border-color:#98a2b3;background:#fcfcfd}.watch-main{min-width:0}.watch-name{font-size:14px;font-weight:950;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-meta{font-size:11px;color:#667085;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.watch-cell{font-size:12px;color:#475467;min-width:0}.watch-cell strong{display:block;font-size:15px;color:#111827;white-space:nowrap}.watch-cell .muted{color:#98a2b3}.watch-actions{display:flex;gap:4px;justify-content:flex-end}.scard-actions{display:flex;gap:4px}
+.scanner-board{display:grid;gap:12px}.scanner-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.scanner-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px}.scanner-kpi .k{font-size:11px;color:#667085;font-weight:800}.scanner-kpi .v{font-size:24px;font-weight:950;color:#111827;margin-top:4px}.scanner-row{display:grid;grid-template-columns:minmax(150px,1.2fr) .72fr .82fr 1.15fr 1fr .75fr auto;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 12px}.scanner-row:hover{border-color:#98a2b3;background:#fcfcfd}.scanner-name{font-size:15px;font-weight:950;color:#111827}.scanner-meta{font-size:11px;color:#667085;margin-top:2px}.scanner-cell{font-size:12px;color:#475467;min-width:0}.scanner-cell strong{display:block;font-size:15px;color:#111827}.scanner-patterns{display:flex;gap:4px;flex-wrap:wrap}.scanner-source{font-size:11px;color:#667085;line-height:1.55}.scanner-empty{background:#fff;border:1px dashed #cfd8e6;border-radius:12px;padding:22px;text-align:center;color:#667085;font-weight:800}.scanner-filter-note{font-size:12px;color:#667085;line-height:1.55}.scanner-load{display:flex;align-items:center;gap:8px;color:#475467;font-size:13px;font-weight:800}.scanner-load:before{content:'';width:10px;height:10px;border-radius:999px;background:#2f6fed;box-shadow:0 0 0 4px rgba(47,111,237,.12)}
 .data-note{font-size:11px;color:#667085;line-height:1.45}.missing-reason{color:#b54708;font-weight:800}
 .capture-summary{width:720px;background:#f6f8fb}.capture-summary-card{border-radius:16px;box-shadow:none}.capture-summary-grid{grid-template-columns:repeat(4,1fr)}.capture-risk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:12px}.capture-risk{border:1px solid #e5e7eb;border-left:4px solid #98a2b3;border-radius:10px;padding:9px;background:#fff}.capture-risk.g{border-left-color:#12b76a}.capture-risk.y{border-left-color:#f59e0b}.capture-risk.r{border-left-color:#d92d20}.capture-risk.b{border-left-color:#2563eb}.capture-risk-name{font-size:10px;font-weight:900;color:#667085}.capture-risk-val{font-size:12px;font-weight:950;color:#111827;margin-top:3px}.capture-disclaimer{margin-top:10px;font-size:10px;color:#98a2b3;line-height:1.45;text-align:left}
-@media(max-width:900px){.brief-grid{grid-template-columns:repeat(3,1fr)}.risk-axis-grid{grid-template-columns:repeat(2,1fr)}.watch-row{grid-template-columns:1fr auto;gap:6px}.watch-cell{display:none}.watch-actions{grid-column:1/3;justify-content:flex-start;border-top:1px solid var(--border);padding-top:7px}.capture-risk-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.brief-grid{grid-template-columns:repeat(3,1fr)}.risk-axis-grid{grid-template-columns:repeat(2,1fr)}.watch-row{grid-template-columns:1fr auto;gap:6px}.watch-cell{display:none}.watch-actions{grid-column:1/3;justify-content:flex-start;border-top:1px solid var(--border);padding-top:7px}.capture-risk-grid{grid-template-columns:repeat(2,1fr)}.scanner-summary{grid-template-columns:repeat(2,1fr)}.scanner-row{grid-template-columns:1fr auto}.scanner-cell{display:none}.scanner-patterns{grid-column:1/3}.scanner-row .watch-actions{grid-column:1/3}}
 @media(max-width:520px){main{padding:10px}.hdr-right{gap:5px}.hdr-right .btn{height:34px;font-size:11px}.tabs{position:sticky;top:55px;z-index:50;overflow-x:auto}.tab{min-width:86px;padding:8px 10px}.brief-head{display:block}.brief-pill{margin-top:10px}.brief-title{font-size:22px}.brief-grid{grid-template-columns:repeat(2,1fr)}.brief-value{font-size:19px}.card{padding:12px}.card-value{font-size:28px}.card-value.sm{font-size:24px}.risk-axis-grid{grid-template-columns:1fr}.watch-row{padding:10px}.sector-wrap{padding:12px}.toolbar{padding:10px}.form-row{display:grid;grid-template-columns:1fr;align-items:stretch}.field,.field.grow{min-width:0}.capture-summary{width:390px;padding:10px}.capture-summary-grid{grid-template-columns:repeat(2,1fr)}.capture-metric-value{font-size:20px}}
 </style>
 </head>
@@ -2130,6 +2131,77 @@ buildDashboardCaptureSummary=function(){
 };
 renderDashboardFast=function(){[renderProfiles,ensureP0Layout,renderMarketBrief,renderMarketJudgement,renderGlobal,renderKorea,renderYield,renderSentiment,renderForex,renderCommodities,renderAlerts,renderSignals,renderHistory,renderDefaultCharts,renderTvPicker].forEach(fn=>safeRender(fn))};
 renderAll=function(){ensureP0Layout();renderProfiles();renderMarketBrief();renderMarketJudgement();renderGlobal();renderLeaderEtfs();renderHighList();renderKorea();renderYield();renderSentiment();renderForex();renderCommodities();renderAlerts();renderSectors();renderSignals();renderHistory();renderTradingViewWidgets()};
+/* Candidate scanner */
+let scannerState={loading:false,loaded:false,error:'',data:null,lastKey:''};
+function ensureScannerLayout(){
+ const tabs=document.querySelector('.tabs');if(tabs&&!document.querySelector('[data-tab-candidates]')){
+  const tab=document.createElement('div');tab.className='tab';tab.dataset.tabCandidates='1';tab.textContent='후보 발굴';tab.setAttribute('onclick',"switchTab('candidates',this)");
+  const historyTab=[...tabs.querySelectorAll('.tab')].find(x=>(x.getAttribute('onclick')||'').includes("'history'"));if(historyTab)tabs.insertBefore(tab,historyTab);else tabs.appendChild(tab);
+ }
+ if(!document.getElementById('tab-candidates')){
+  const panel=document.createElement('div');panel.className='tab-content';panel.id='tab-candidates';
+  panel.innerHTML=`<div class="section"><div class="section-title">후보 발굴</div><div class="toolbar"><div class="form-row"><div class="field"><label>스캔 범위</label><select id="scannerScope" onchange="fetchScanner(true)"><option value="all">코스피200 + 코스닥150</option><option value="kospi200">코스피200</option><option value="kosdaq150">코스닥150</option></select></div><div class="field"><label>패턴</label><select id="scannerPattern" onchange="fetchScanner(true)"><option value="all">전체 패턴</option><option value="newHigh">52주 신고가/신고가권</option><option value="stage2">Stage 2</option><option value="vcp">VCP 응축</option><option value="volumeRecovery">거래량 회복</option><option value="foreignStrong">외국인 5일 강도</option></select></div><div class="field"><label>유동성</label><select id="scannerMinValue" onchange="fetchScanner(true)"><option value="3000000000">20일 평균 30억 이상</option><option value="5000000000" selected>20일 평균 50억 이상</option><option value="10000000000">20일 평균 100억 이상</option><option value="30000000000">20일 평균 300억 이상</option></select></div><button class="btn btn-blue" onclick="fetchScanner(true)">스캔 실행</button></div><div class="scanner-filter-note">먼저 유동성 필터를 통과한 종목만 봅니다. 패턴은 52주 신고가권, Weinstein/Minervini식 Stage 2, VCP 응축, 거래량 회복을 자동 탐지합니다. 외국인 5일 순매수는 외국인 보유율 변화 기반 추정치입니다.</div></div><div id="scannerContent" class="scanner-board"></div></div>`;
+  const history=document.getElementById('tab-history');if(history)history.parentNode.insertBefore(panel,history);else document.querySelector('main')?.appendChild(panel);
+ }
+}
+function scannerMoney(v){
+ if(v==null||!Number.isFinite(v))return '—';
+ const a=Math.abs(v),sign=v<0?'-':'';
+ if(a>=1_0000_0000_0000)return sign+(a/1_0000_0000_0000).toFixed(1)+'조';
+ if(a>=1_0000_0000)return sign+Math.round(a/1_0000_0000).toLocaleString('ko-KR')+'억';
+ if(a>=1_0000)return sign+Math.round(a/1_0000).toLocaleString('ko-KR')+'만';
+ return sign+Math.round(a).toLocaleString('ko-KR');
+}
+function scannerPatternChip(p){
+ const cls=p.key==='newHigh'?'ch-r':p.key==='stage2'?'ch-g':p.key==='vcp'?'ch-p':p.key==='volumeRecovery'?'ch-b':'ch-y';
+ return `<span class="chip ${cls}" title="${htmlSafe(p.source||'')}">${htmlSafe(p.label)}</span>`;
+}
+function scannerForeignText(row){
+ const f=row.foreign||{};
+ if(f.net5Value==null)return '<strong>—</strong><span class="missing-reason">외국인 추정 불가</span>';
+ const strong=f.strength!=null?`${fmt(f.strength,1)}배`:'비교 대기';
+ const color=f.net5Value>=0?'var(--red)':'var(--blue)';
+ return `<strong style="color:${color}">${scannerMoney(f.net5Value)}</strong><span>5일 추정 · 20일대비 ${strong}</span>`;
+}
+function scannerRowHtml(row){
+ const symbol=row.symbol||`${row.code}.KS`,price=row.analysisPrice??row.price,chg=row.changePct;
+ const gap=row.highGap!=null?row.highGap.toFixed(1)+'%':'—',score=row.score!=null?Math.round(row.score):'—';
+ return `<div class="scanner-row clickable" onclick="openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')"><div class="watch-main"><div class="scanner-name">${row.highGap!=null&&row.highGap>=-1.5?'🚀 ':''}${htmlSafe(row.name||row.code)}</div><div class="scanner-meta">${htmlSafe(row.code)} · ${htmlSafe(row.market||'KR')} · ${htmlSafe(row.source||'')}</div></div><div class="scanner-cell"><strong>${fmtStockPrice(price,'KRW')}</strong><span style="${pctColor(chg)}">${chg!=null?fmtPct(chg):'등락률 대기'}</span></div><div class="scanner-cell"><strong>${gap}</strong><span>52주 고점 대비</span></div><div class="scanner-patterns">${(row.patterns||[]).slice(0,4).map(scannerPatternChip).join('')}</div><div class="scanner-cell">${scannerForeignText(row)}</div><div class="scanner-cell"><strong>${score}</strong><span>종합 강도</span></div><div class="watch-actions"><button class="btn mini-btn" onclick="event.stopPropagation();openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')">차트</button><button class="btn btn-green mini-btn" onclick="event.stopPropagation();addScannerCandidate('${jsArg(row.code)}','${jsArg(row.name||row.code)}','${jsArg(row.market||'KR')}')">추가</button></div></div>`;
+}
+function renderScanner(){
+ ensureScannerLayout();
+ const box=document.getElementById('scannerContent');if(!box)return;
+ if(scannerState.loading){box.innerHTML='<div class="scanner-load">코스피200 + 코스닥150 후보를 계산하는 중입니다. 보통 몇 초 걸립니다.</div>';return}
+ if(scannerState.error){box.innerHTML=`<div class="scanner-empty">${htmlSafe(scannerState.error)}</div>`;return}
+ if(!scannerState.loaded){box.innerHTML='<div class="scanner-empty">스캔 실행을 누르면 코스피200 + 코스닥150에서 유동성 필터를 먼저 통과한 후보만 추립니다.</div>';return}
+ const data=scannerState.data||{},items=data.items||[],reasons=data.reasonStats||{};
+ box.innerHTML=`<div class="scanner-summary"><div class="scanner-kpi"><div class="k">스캔 종목</div><div class="v">${data.scanned??'—'}</div></div><div class="scanner-kpi"><div class="k">유동성 통과</div><div class="v">${data.liquidityPassed??'—'}</div></div><div class="scanner-kpi"><div class="k">후보 종목</div><div class="v">${data.candidateCount??items.length}</div></div><div class="scanner-kpi"><div class="k">기준</div><div class="v" style="font-size:18px">${scannerMoney(data.minValue)}/일</div></div></div><div class="scanner-source">${(data.sourceNotes||[]).map(htmlSafe).join('<br>')}${Object.keys(reasons).length?`<br>제외 사유: ${Object.entries(reasons).map(([k,v])=>`${htmlSafe(k)} ${v}개`).join(' · ')}`:''}</div><div class="watch-list">${items.length?items.map(scannerRowHtml).join(''):'<div class="scanner-empty">현재 조건을 통과한 후보가 없습니다. 유동성 기준을 낮추거나 전체 패턴으로 다시 확인해 보세요.</div>'}</div>`;
+}
+async function fetchScanner(force=false){
+ ensureScannerLayout();
+ const scope=document.getElementById('scannerScope')?.value||'all',pattern=document.getElementById('scannerPattern')?.value||'all',minValue=document.getElementById('scannerMinValue')?.value||'5000000000';
+ const key=`${scope}|${pattern}|${minValue}`;if(!force&&scannerState.loaded&&scannerState.lastKey===key)return;
+ scannerState={loading:true,loaded:false,error:'',data:null,lastKey:key};renderScanner();
+ try{
+  const res=await fetch(`/api/scanner?scope=${encodeURIComponent(scope)}&pattern=${encodeURIComponent(pattern)}&minValue=${encodeURIComponent(minValue)}&limit=60&_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(30000)});
+  const data=await res.json();if(!res.ok)throw new Error(data?.error||'스캐너 API 오류');
+  scannerState={loading:false,loaded:true,error:'',data,lastKey:key};renderScanner();
+ }catch(err){scannerState={loading:false,loaded:false,error:'후보 발굴 데이터를 불러오지 못했습니다. API 배포 상태나 네트워크를 확인해 주세요.',data:null,lastKey:key};renderScanner();}
+}
+function fetchScannerIfNeeded(){if(!scannerState.loaded&&!scannerState.loading)fetchScanner(false)}
+function addScannerCandidate(code,name,market){
+ const ticker=`${String(code).replace(/\D/g,'').slice(0,6)}.KS`;if(!/^\d{6}\.KS$/.test(ticker))return alert('종목코드를 확인하지 못했습니다.');
+ if(!profiles[activeProfile])profiles[activeProfile]=normalizeProfile({sectors:clone(DEFAULT_SECTORS)});
+ let sec=sectors().find(s=>s.id==='scanner-candidates'||s.name==='후보 발굴');if(!sec){sec={id:'scanner-candidates',name:'후보 발굴',icon:'🔎',stocks:[]};profiles[activeProfile].sectors.unshift(sec)}
+ if(sec.stocks.some(s=>tickerKey(s.ticker)===tickerKey(ticker)))return alert('이미 후보 발굴 그룹에 있습니다.');
+ sec.stocks.push({ticker,name,country:'KR',note:market||'스캐너 후보'});save();renderAll();fetchAll(true);alert('후보 발굴 그룹에 추가했습니다.');
+}
+var scannerEnsureBase=ensureP0Layout;
+ensureP0Layout=function(){scannerEnsureBase();ensureScannerLayout()};
+var scannerSwitchBase=switchTab;
+switchTab=function(name,el){ensureScannerLayout();scannerSwitchBase(name,el);if(name==='candidates')fetchScannerIfNeeded()};
+var scannerRenderAllBase=renderAll;
+renderAll=function(){scannerRenderAllBase();ensureScannerLayout();renderScanner()};
 function init(){document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});buildManualFields();buildThresholdFields();ensureP0Layout();load();renderAll();fetchAll(false)}
 init();
 </script>
