@@ -789,6 +789,7 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
     <div class="tab" onclick="switchTab('sectors',this)">관심 섹터</div>
     <div class="tab" onclick="switchTab('signals',this)">경계신호</div>
     <div class="tab" data-tab-candidates="1" onclick="switchTab('candidates',this)">후보 발굴</div>
+    <div class="tab" data-tab-gurus="1" onclick="switchTab('gurus',this)">대가 비교</div>
     <div class="tab" onclick="switchTab('history',this)">히스토리</div>
   </div>
   <div class="tab-content active" id="tab-dashboard">
@@ -873,6 +874,18 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
         <div class="scanner-filter-note">먼저 유동성 필터를 통과한 종목만 봅니다. 52주 신고가권, Stage 2, VCP 응축, 거래량 회복을 자동 탐지합니다. 외국인 5일 순매수는 외국인 보유율 변화 기반 추정치입니다.</div>
       </div>
       <div id="scannerContent" class="scanner-board"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-gurus">
+    <div class="section">
+      <div class="section-title">대가 포트폴리오 비교</div>
+      <div class="toolbar">
+        <div class="form-row">
+          <button class="btn btn-blue" onclick="fetchGurus(true)">13F 새로고침</button>
+        </div>
+        <div class="scanner-filter-note">SEC 13F 공시를 기반으로 드러켄밀러, 버핏, 애크먼, 테퍼, 달리오, 버리, 타이거글로벌의 최근 보유 종목을 비교합니다. 분기 지연 공시라 실시간 매수 신호가 아니라 아이디어 추적용으로 봅니다.</div>
+      </div>
+      <div id="guruContent" class="scanner-board"></div>
     </div>
   </div>
   <div class="tab-content" id="tab-history">
@@ -2036,7 +2049,7 @@ var p0RiskMeta=(parts)=>parts.filter(Boolean).join(' · ')||'데이터 대기';
 ensureP0Layout=function(){
  const logo=document.querySelector('.logo');if(logo)logo.innerHTML='Market <span>Check</span>';
  const btns=document.querySelectorAll('.hdr-right .btn');if(btns[0])btns[0].textContent='새로고침';if(btns[1])btns[1].textContent='캡쳐';if(btns[2])btns[2].textContent='설정';
- const tabs=document.querySelectorAll('.tab');['대시보드','관심섹터','경계신호','후보 발굴','히스토리'].forEach((t,i)=>{if(tabs[i])tabs[i].textContent=t});
+ const tabs=document.querySelectorAll('.tab');['대시보드','관심섹터','경계신호','후보 발굴','대가 비교','히스토리'].forEach((t,i)=>{if(tabs[i])tabs[i].textContent=t});
  const dash=document.getElementById('dashboardCapture');if(dash&&!document.getElementById('marketBrief'))dash.insertAdjacentHTML('afterbegin','<div class="market-brief" id="marketBrief"></div>');
  const setTitle=(id,txt)=>{const el=document.getElementById(id),sec=el?.closest('.section');const title=sec?.querySelector('.section-title');if(title)title.textContent=txt};
  setTitle('global-indices','글로벌 지수');setTitle('yield-card','금리 / 채권');setTitle('sentiment-card','심리 / 변동성');setTitle('forex','환율');setTitle('commodities','원자재 / 암호화폐');setTitle('leader-etfs','주도섹터 ETF');setTitle('marketJudgement','마켓 포지션 보드');setTitle('riskChecklist','경계신호 5축 점검');setTitle('signalMeters','시장 체온계');
@@ -2278,15 +2291,79 @@ function addScannerCandidate(code,name,market){
  if(sec.stocks.some(s=>tickerKey(s.ticker)===tickerKey(ticker)))return alert('이미 후보 발굴 그룹에 있습니다.');
  sec.stocks.push({ticker,name,country:'KR',note:market||'스캐너 후보'});save();renderAll();fetchAll(true);alert('후보 발굴 그룹에 추가했습니다.');
 }
+/* Guru portfolio comparison */
+let guruState={loading:false,loaded:false,error:'',data:null};
+function ensureGuruLayout(){
+ const tabs=document.querySelector('.tabs');if(tabs&&!document.querySelector('[data-tab-gurus]')){
+  const tab=document.createElement('div');tab.className='tab';tab.dataset.tabGurus='1';tab.textContent='대가 비교';tab.setAttribute('onclick',"switchTab('gurus',this)");
+  const historyTab=[...tabs.querySelectorAll('.tab')].find(x=>(x.getAttribute('onclick')||'').includes("'history'"));if(historyTab)tabs.insertBefore(tab,historyTab);else tabs.appendChild(tab);
+ }
+ if(!document.getElementById('tab-gurus')){
+  const panel=document.createElement('div');panel.className='tab-content';panel.id='tab-gurus';
+  panel.innerHTML=`<div class="section"><div class="section-title">대가 포트폴리오 비교</div><div class="toolbar"><div class="form-row"><button class="btn btn-blue" onclick="fetchGurus(true)">13F 새로고침</button></div><div class="scanner-filter-note">SEC 13F 공시를 기반으로 여러 대가의 최근 보유 종목을 비교합니다. 분기 지연 공시라 실시간 매수 신호가 아니라 아이디어 추적용으로 봅니다.</div></div><div id="guruContent" class="scanner-board"></div></div>`;
+  const history=document.getElementById('tab-history');if(history)history.parentNode.insertBefore(panel,history);else document.querySelector('main')?.appendChild(panel);
+ }
+}
+function guruUsd(v){
+ if(v==null||!Number.isFinite(Number(v)))return '—';
+ const n=Number(v),a=Math.abs(n),sign=n<0?'-':'';
+ if(a>=1e12)return `${sign}$${(a/1e12).toFixed(1)}T`;
+ if(a>=1e9)return `${sign}$${(a/1e9).toFixed(1)}B`;
+ if(a>=1e6)return `${sign}$${(a/1e6).toFixed(1)}M`;
+ return `${sign}$${Math.round(a).toLocaleString('en-US')}`;
+}
+function guruPct(v){return v==null||!Number.isFinite(Number(v))?'—':`${v>0?'+':''}${fmt(Number(v),1)}%`}
+function guruStatus(row){
+ const key=row.statusKey||'held';
+ if(key==='new')return {cls:'ch-p',label:'신규'};
+ if(key==='increased')return {cls:'ch-r',label:'증가'};
+ if(key==='reduced')return {cls:'ch-b',label:'감소'};
+ return {cls:'ch-g',label:'유지'};
+}
+function guruOpenAttrs(row){
+ return row?.ticker?` onclick="openChartByTicker('${jsArg(row.ticker)}','${jsArg(row.issuer||row.ticker)}','US')"`:'';
+}
+function guruHoldingRow(row,mode='holding'){
+ const value=row.valueUsd??(row.value!=null?row.value*1000:row.totalValue),status=mode==='consensus'?{cls:'ch-p',label:'공통'}:guruStatus(row),managers=row.managers?.map(m=>m.name).join(', ')||row.manager||'',name=row.ticker?`${row.ticker} · ${row.issuer||''}`:(row.issuer||row.key||'종목');
+ const meta=[row.cusip,managers].filter(Boolean).join(' · ');
+ const weight=row.weightPct!=null?`${fmt(row.weightPct,1)}%`:(row.totalWeight!=null?`${fmt(row.totalWeight,1)}%`:'—');
+ const clickable=row.ticker?' clickable':'';
+ return `<div class="watch-row${clickable}"${guruOpenAttrs(row)}><div class="watch-main"><div class="watch-name">${htmlSafe(name)}</div><div class="watch-meta">${htmlSafe(meta)}</div></div><div class="watch-cell"><strong>${guruUsd(value)}</strong><span>${mode==='consensus'?'합산 공시금액':'공시금액'}</span></div><div class="watch-cell"><strong>${weight}</strong><span>${mode==='consensus'?'합산 비중':'포트 비중'}</span></div><div class="watch-cell"><strong>${guruPct(row.valueChangePct)}</strong><span>전분기 대비</span></div><div class="watch-cell"><span class="chip ${status.cls}">${status.label}</span></div><div class="watch-cell"><strong>${mode==='consensus'?(row.managers?.length||0)+'명':htmlSafe(row.title||'13F')}</strong><span>${mode==='consensus'?htmlSafe(managers):'보유 유형'}</span></div><div class="watch-actions">${row.ticker?`<button class="btn mini-btn" onclick="event.stopPropagation();openChartByTicker('${jsArg(row.ticker)}','${jsArg(row.issuer||row.ticker)}','US')">차트</button>`:''}</div></div>`;
+}
+function guruMoveCard(title,rows,empty){
+ return `<div class="sector-wrap"><div class="sector-head"><div><div class="sector-name">${htmlSafe(title)}</div><div class="data-note">최근 13F와 직전 13F를 비교한 변화입니다.</div></div><span class="chip ch-b">${rows.length}개</span></div><div class="watch-list">${rows.length?rows.slice(0,8).map(r=>guruHoldingRow(r,'move')).join(''):`<div class="scanner-empty">${htmlSafe(empty)}</div>`}</div></div>`;
+}
+function renderGurus(){
+ ensureGuruLayout();
+ const box=document.getElementById('guruContent');if(!box)return;
+ if(guruState.loading){box.innerHTML='<div class="scanner-load">SEC 13F 공시를 불러와 대가별 보유 종목을 비교하는 중입니다.</div>';return}
+ if(guruState.error){box.innerHTML=`<div class="scanner-empty">${htmlSafe(guruState.error)}</div>`;return}
+ if(!guruState.loaded){box.innerHTML='<div class="scanner-empty">대가 비교 탭을 열면 SEC 13F 기반 포트폴리오 비교를 자동으로 불러옵니다.</div>';return}
+ const data=guruState.data||{},managers=data.managers||[],ok=managers.filter(m=>!m.error),consensus=data.consensus||[],buys=data.buys||[],reductions=data.reductions||[];
+ const latest=ok.map(m=>m.latest?.reportDate).filter(Boolean).sort().pop()||'—';
+ const total=ok.reduce((sum,m)=>sum+(m.latest?.totalValue||0)*1000,0);
+ box.innerHTML=`<div class="scanner-summary"><div class="scanner-kpi"><div class="k">분석 대가</div><div class="v">${ok.length}</div></div><div class="scanner-kpi"><div class="k">공통 보유</div><div class="v">${consensus.length}</div></div><div class="scanner-kpi"><div class="k">신규·증가</div><div class="v">${buys.length}</div></div><div class="scanner-kpi"><div class="k">최근 기준일</div><div class="v" style="font-size:18px">${htmlSafe(latest)}</div></div></div><div class="scanner-source">${htmlSafe(data.caveat||'13F는 지연 공시입니다. 아이디어 확인용으로만 봅니다.')}<br>합산 공시금액 ${guruUsd(total)} · 생성 ${data.generatedAt?new Date(data.generatedAt).toLocaleString('ko-KR'):'—'}</div><div class="sector-wrap"><div class="sector-head"><div><div class="sector-name">공통 보유 상위</div><div class="data-note">2명 이상이 함께 보유한 종목입니다. 많이 겹칠수록 아이디어 후보로만 따로 관찰합니다.</div></div><span class="chip ch-p">${consensus.length}개</span></div><div class="watch-list">${consensus.length?consensus.slice(0,10).map(r=>guruHoldingRow(r,'consensus')).join(''):'<div class="scanner-empty">현재 공통 보유 종목을 찾지 못했습니다.</div>'}</div></div><div class="grid g2">${guruMoveCard('신규·대폭 증가',buys,'신규 또는 30% 이상 증가 종목이 없습니다.')}${guruMoveCard('대폭 감소',reductions,'30% 이상 감소 종목이 없습니다.')}</div><div class="section-title" style="margin-top:6px">대가별 상위 보유</div><div class="sector-grid">${managers.map(m=>`<div class="sector-wrap"><div class="sector-head"><div><div class="sector-name">${htmlSafe(m.name)} <span style="font-size:13px;color:var(--muted)">/ ${htmlSafe(m.person||'')}</span></div><div class="data-note">${m.error?htmlSafe(m.error):`기준일 ${htmlSafe(m.latest?.reportDate||'—')} · 보유 ${m.latest?.holdingsCount??0}개 · 공시금액 ${guruUsd((m.latest?.totalValue||0)*1000)}`}</div></div><span class="chip ${m.error?'ch-r':'ch-b'}">${m.error?'확인 필요':'13F'}</span></div><div class="watch-list">${m.error?`<div class="scanner-empty">${htmlSafe(m.error)}</div>`:(m.holdings||[]).slice(0,8).map(r=>guruHoldingRow(r,'holding')).join('')}</div></div>`).join('')}</div>`;
+}
+async function fetchGurus(force=false){
+ ensureGuruLayout();
+ if(!force&&guruState.loaded)return;
+ guruState={loading:true,loaded:false,error:'',data:null};renderGurus();
+ try{
+  const res=await fetch(`/api/guru-portfolios?limit=10&_=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(45000)});
+  const data=await res.json();if(!res.ok)throw new Error(data?.error||'대가 포트폴리오 API 오류');
+  guruState={loading:false,loaded:true,error:'',data};renderGurus();
+ }catch(err){guruState={loading:false,loaded:false,error:'대가 포트폴리오를 불러오지 못했습니다. 배포에 api/guru-portfolios.js가 포함됐는지와 네트워크 상태를 확인해주세요.',data:null};renderGurus();}
+}
+function fetchGurusIfNeeded(){if(!guruState.loaded&&!guruState.loading)fetchGurus(false)}
 var scannerEnsureBase=ensureP0Layout;
-ensureP0Layout=function(){scannerEnsureBase();ensureScannerLayout()};
+ensureP0Layout=function(){scannerEnsureBase();ensureScannerLayout();ensureGuruLayout()};
 var scannerSwitchBase=switchTab;
-switchTab=function(name,el){ensureScannerLayout();scannerSwitchBase(name,el);if(name==='candidates')fetchScannerIfNeeded()};
+switchTab=function(name,el){ensureScannerLayout();ensureGuruLayout();scannerSwitchBase(name,el);if(name==='candidates')fetchScannerIfNeeded();if(name==='gurus')fetchGurusIfNeeded()};
 var scannerRenderAllBase=renderAll;
-renderAll=function(){scannerRenderAllBase();ensureScannerLayout();renderScanner()};
+renderAll=function(){scannerRenderAllBase();ensureScannerLayout();ensureGuruLayout();renderScanner();renderGurus()};
 /* Candidate tab and ETF layout fixes */
 function fixPrimaryTabs(){
- const names={dashboard:'대시보드',sectors:'관심섹터',signals:'경계신호',candidates:'후보 발굴',history:'히스토리'};
+ const names={dashboard:'대시보드',sectors:'관심섹터',signals:'경계신호',candidates:'후보 발굴',gurus:'대가 비교',history:'히스토리'};
  document.querySelectorAll('.tabs .tab').forEach(tab=>{
   const on=tab.getAttribute('onclick')||'';
   Object.entries(names).forEach(([key,label])=>{if(on.includes(`'${key}'`))tab.textContent=label});
