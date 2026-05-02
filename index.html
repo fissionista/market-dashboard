@@ -1173,6 +1173,25 @@ async function toggleAlertsEnabled(){
  save();renderAlertSettings();updateBellBadge();
 }
 function toggleAlertOption(key){ensureAlertSettings();settings.alerts[key]=!settings.alerts[key];save();renderAlertSettings()}
+async function promptPriceAlert(symbol,name,currency,currentPrice){
+ if(!('Notification' in window)){alert('이 브라우저는 알람을 지원하지 않습니다.');return}
+ ensureAlertSettings();
+ if(!settings.alerts.enabled){
+  if(!confirm('알람이 꺼져 있습니다. 지금 켤까요?'))return;
+  const ok=await requestNotificationPermission();
+  if(!ok)return;
+  settings.alerts.enabled=true;save();updateBellBadge();
+ }
+ const cur=currentPrice!=null?` (현재 ${fmtStockPrice(currentPrice,currency)})`:'';
+ const dir=prompt(`${name} 가격 알람 방향을 선택하세요${cur}\n\n1: 이상 (목표가 도달)\n2: 이하 (손절가 도달)\n\n숫자만 입력`);
+ if(dir!=='1'&&dir!=='2')return;
+ const type=dir==='1'?'above':'below';
+ const priceStr=prompt(`${name} ${type==='above'?'목표가':'손절가'}를 입력하세요${cur}\n\n예: 75000 또는 150.5`);
+ const price=parseFloat(String(priceStr||'').replace(/[^\d.\-]/g,''));
+ if(!Number.isFinite(price)||price<=0){alert('유효한 가격을 입력하세요.');return}
+ const ok=addPriceAlert(symbol,name,type,price,currency);
+ if(ok)alert(`✓ ${name} ${type==='above'?'≥':'≤'} ${fmtStockPrice(price,currency)} 알람 등록 완료. 1회 발송 후 자동 삭제됩니다.`);
+}
 function openAlertModal(){
  markAlertsViewed();
  ensureAlertSettings();
@@ -2352,7 +2371,7 @@ function renderChartModal(label,symbol,price,chg,currency='USD'){
  const priceText=currency==='KRW'?fmtStockPrice(price,'KRW'):(price!=null?(symbol.includes('=X')||symbol.startsWith('^')?fmt(price,2):fmtStockPrice(price,currency)):'—'),range=vals.length?[low,high]:null;
  const closePath=linePathRange(rows,320,180,12,range),ma5Path=linePathRange(movingSeries(rows,5),320,180,12,range),ma20Path=linePathRange(movingSeries(rows,20),320,180,12,range),ma50Path=linePathRange(movingSeries(rows,50),320,180,12,range),ma200Path=linePathRange(movingSeries(rows,200),320,180,12,range);
  const fallbackSvg=`<svg class="chart-svg" viewBox="0 0 320 180" preserveAspectRatio="none"><defs><linearGradient id="chartModalFadeFinal" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${stroke}" stop-opacity=".24"/><stop offset="100%" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>${closePath?`<path d="${closePath} L308 168 L12 168 Z" fill="url(#chartModalFadeFinal)"/><path d="${closePath}" fill="none" stroke="${stroke}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round"/>${ma5Path?`<path d="${ma5Path}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>`:''}${ma20Path?`<path d="${ma20Path}" fill="none" stroke="#ef4444" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`:''}${ma50Path?`<path d="${ma50Path}" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`:''}${ma200Path?`<path d="${ma200Path}" fill="none" stroke="#2563eb" stroke-width="1.7" vector-effect="non-scaling-stroke"/>`:''}`:`<text x="160" y="94" text-anchor="middle" fill="#8b92ac" font-size="13">그래프 데이터 대기 중</text>`}</svg>`;
- document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''} ${marketStampHtml(symbol,item,lastDate)}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}<button class="btn btn-green mini-btn" onclick="captureChartModal()" style="margin-left:6px">캡쳐</button></div></div></div>${proChartShell(fallbackSvg)}${koreaStockDetailPanel(symbol,price??last,currency)||stockAnalysisPanel(symbol,price??last,currency)}<details class="analysis-details"><summary>세부 근거 보기</summary><div class="analysis-details-body">${valuationPanelHtml(symbol,item)}${chartMasterChecklistHtml(symbol,null,price??last)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${entryZonePanelHtml(pts,symbol,currency)}${fibPanelHtml(pts,symbol)}</div></details>`;
+ document.getElementById('chartModalBody').innerHTML=`<div class="chart-modal-head"><div><div class="chart-modal-title">${label}</div><div class="card-sub">${symbol}${lastDate?` · ${new Date(lastDate).toLocaleDateString('ko-KR')}`:''} ${marketStampHtml(symbol,item,lastDate)}</div></div><div><div class="chart-modal-price">${priceText}</div><div class="chart-modal-sub">${chg!=null?`<span class="chip ${changeCls(chg)}">일간 ${fmtPct(chg)}</span>`:''}${ret!=null?`<span class="chip ${ret>=0?'ch-r':'ch-b'}">1년 ${fmtPct(ret)}</span>`:''}${dd!=null?`<span>고점대비 ${dd.toFixed(1)}%</span>`:''}<button class="btn btn-green mini-btn" onclick="captureChartModal()" style="margin-left:6px">캡쳐</button><button class="btn mini-btn" onclick="promptPriceAlert('${jsArg(symbol)}','${jsArg(label)}','${jsArg(currency)}',${price??'null'})" style="margin-left:4px">🔔 알람</button></div></div></div>${proChartShell(fallbackSvg)}${koreaStockDetailPanel(symbol,price??last,currency)||stockAnalysisPanel(symbol,price??last,currency)}<details class="analysis-details"><summary>세부 근거 보기</summary><div class="analysis-details-body">${valuationPanelHtml(symbol,item)}${chartMasterChecklistHtml(symbol,null,price??last)}<div class="mini-card" style="margin-top:10px"><div class="mini-head"><div class="mini-title">차트 위치</div><span class="chip ${tech.chip}">${tech.label}</span></div><div class="mini-note">${tech.note}</div></div>${entryZonePanelHtml(pts,symbol,currency)}${fibPanelHtml(pts,symbol)}</div></details>`;
  setTimeout(()=>renderProChart(symbol,pts,currency),0);
 }
 function openModal(){MANUAL_FIELDS.forEach(([k])=>{const el=document.getElementById('m_'+k);if(el)el.value=manual[k]??''});const refMap={sp_ref:'r_sp',nasdaq_ref:'r_nasdaq',kospi_ref:'r_kospi',jpy_sig:'r_jpy_sig'};Object.entries(refMap).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=refs[k]??''});THRESHOLD_FIELDS.forEach(([k])=>{const el=document.getElementById('r_'+k);if(el)el.value=refs[k]??DEFAULT_REFS[k]??''});const provider=document.getElementById('set_provider'),alpha=document.getElementById('set_alpha');if(provider)provider.value=settings.provider||'auto';if(alpha)alpha.value=settings.alphaKey||'';document.getElementById('editModal').classList.add('open')}
