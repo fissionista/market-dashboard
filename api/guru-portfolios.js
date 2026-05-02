@@ -126,8 +126,23 @@ function publicTradePerson(row) {
 }
 
 async function loadPublicDisclosureManager(manager) {
-  const data = await getJson(HOUSE_TRANSACTIONS, 15000);
-  const rows = Array.isArray(data) ? data : [];
+  // house-stock-watcher-data S3 버킷이 비공개로 전환되어 403을 반환하는 경우가 있음.
+  // 추후 대체 소스(capitoltrades.com 스크래핑 또는 Quiver Quant 유료 API) 마이그레이션 필요.
+  let rows = [];
+  try {
+    const data = await getJson(HOUSE_TRANSACTIONS, 15000);
+    rows = Array.isArray(data) ? data : [];
+  } catch (e) {
+    return {
+      ...manager,
+      error: 'STOCK Act 데이터 소스(house-stock-watcher S3)가 응답하지 않습니다. 직접 확인은 capitoltrades.com에서 가능합니다.',
+      errorDetail: String(e?.message || e),
+      externalUrl: 'https://www.capitoltrades.com/trades?politician=Pelosi',
+      latest: null,
+      previous: null,
+      holdings: [],
+    };
+  }
   const filtered = rows
     .filter((row) => manager.matcher.test(publicTradePerson(row)))
     .map((row) => ({

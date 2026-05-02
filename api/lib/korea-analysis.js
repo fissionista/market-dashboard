@@ -533,7 +533,7 @@ export function detectPatterns(rows, summary = {}) {
   };
 }
 
-function scoreAnalysis(detected, summary, foreign, turnaround) {
+function scoreAnalysis(detected, summary, foreign, turnaround, market, sectorBonus = 0) {
   const patternScore = Math.min(58, detected.patterns.reduce((sum, p) => sum + (p.score || 0), 0));
   const foreignScore = scoreForeign(foreign);
   const valuationScore = summary.per != null && summary.per > 0 && summary.per < 45 ? 4 : 0;
@@ -543,7 +543,9 @@ function scoreAnalysis(detected, summary, foreign, turnaround) {
     : detected.avgValue20 >= 10_000_000_000 ? 4
       : detected.avgValue20 >= DEFAULT_MIN_VALUE ? 2 : 0;
   const financeScore = turnaround?.score || 0;
-  const raw = patternScore + foreignScore + valuationScore + highScore + liquidityScore;
+  const marketPenalty = market?.penalty ?? 0;
+  // finance, marketPenalty, sectorBonus 누락 버그 수정 — 모두 raw에 포함
+  const raw = patternScore + foreignScore + valuationScore + highScore + liquidityScore + financeScore + marketPenalty + sectorBonus;
   return {
     total: Math.max(0, Math.min(100, raw)),
     breakdown: {
@@ -553,6 +555,8 @@ function scoreAnalysis(detected, summary, foreign, turnaround) {
       highPosition: highScore,
       liquidity: liquidityScore,
       finance: financeScore,
+      marketPenalty,
+      sectorBonus,
     },
   };
 }
@@ -589,20 +593,21 @@ export async function analyzeKoreanStock(stock, options = {}) {
   const code = koreanCode(stock.code || stock.symbol || stock.ticker);
   if (!code) return { ...stock, excluded: true, reason: '종목코드 확인 불가' };
   const includeFinance = options.includeFinance !== false;
+  const earlySuffix = stock.market === 'KOSDAQ150' || stock.market === 'KOSDAQ' || stock.market === 'KQ' ? '.KQ' : '.KS';
   const [summary, rows, finance] = await Promise.all([
     fetchSummary(code),
     fetchHistory(code),
     includeFinance ? fetchNaverFinance(code) : Promise.resolve(EMPTY_NAVER_FINANCE),
   ]);
   if (rows.length < 160) {
-    return { ...stock, code, symbol: `${code}.KS`, excluded: true, reason: '1년 가격 데이터 부족', rows: rows.length };
+    return { ...stock, code, symbol: `${code}${earlySuffix}`, excluded: true, reason: '1년 가격 데이터 부족', rows: rows.length };
   }
   const detected = detectPatterns(rows, summary);
   if (options.minValue && (!detected.avgValue20 || detected.avgValue20 < options.minValue)) {
     return {
       ...stock,
       code,
-      symbol: `${code}.KS`,
+      symbol: `${code}${earlySuffix}`,
       excluded: true,
       reason: '유동성 필터 미달',
       avgValue20: detected.avgValue20,
@@ -610,12 +615,19 @@ export async function analyzeKoreanStock(stock, options = {}) {
   }
   const foreign = foreignProfile(rows, summary);
   const turnaround = turnaroundProfile(finance);
-  const scored = scoreAnalysis(detected, summary, foreign, turnaround);
+  const market = options.marketEnv ? computeMarketPenalty(stock.market, options.marketEnv) : null;
+  const sectorMatch = options.sectorStrength
+    ? computeSectorBonus(stock.name, options.sectorStrength)
+    : { bonus: 0, matched: null, sectorName: null };
+  const scored = scoreAnalysis(detected, summary, foreign, turnaround, market, sectorMatch.bonus);
   const scenario = buildScenario(detected);
+  const suffix = stock.market === 'KOSDAQ150' || stock.market === 'KOSDAQ' || stock.market === 'KQ' ? '.KQ' : '.KS';
   return {
     ...stock,
     code,
-    symbol: `${code}.KS`,
+    symbol: `${code}${suffix}`,
+    market,
+    sectorMatch,
     price: detected.analysisPrice ?? summary.price ?? rows.at(-1)?.close ?? null,
     quotePrice: summary.price ?? null,
     analysisPrice: detected.analysisPrice ?? null,
@@ -648,5 +660,125 @@ export async function analyzeKoreanStock(stock, options = {}) {
       finance: (finance.operatingIncomeSeries || []).length < 2 ? '연간 영업이익 데이터 부족' : '',
       per: summary.per == null ? '네이버 요약 PER 미제공' : '',
     },
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// Phase B-1 (재복구): 시장 환경 게이트 + 섹터 강도
+// 정규준식: 코스피 약세장이면 모든 종목에 페널티
+// 김종봉식: 신고가권 섹터 종목에 가산점
+// ────────────────────────────────────────────────────────────
+
+// 주요 한국 섹터 ETF + 종목명 키워드 매핑
+export const SECTOR_ETFS = [
+  { code: '091160', name: '반도체', tag: 'semicon', keywords: /반도체|메모리|HBM|소부장|디램|낸드|파운드리|웨이퍼/i },
+  { code: '364980', name: 'K-2차전지', tag: 'battery', keywords: /2차전지|배터리|양극재|음극재|전해질|분리막|에코프로|엘앤에프|포스코퓨처엠/i },
+  { code: '117460', name: '에너지화학', tag: 'energy', keywords: /화학|정유|에너지|수소|태양광|원자력|SK이노/i },
+  { code: '139220', name: '건설', tag: 'construction', keywords: /건설|시공|토목|중공업|조선|플랜트/i },
+  { code: '139260', name: '경기소비재', tag: 'consumer', keywords: /패션|화장품|유통|식품|음료|편의점|백화점/i },
+  { code: '227560', name: '헬스케어', tag: 'healthcare', keywords: /의료|병원|진단|헬스/i },
+  { code: '266390', name: '바이오', tag: 'bio', keywords: /바이오|제약|신약|항체|세포치료/i },
+  { code: '139250', name: '미디어컨텐츠', tag: 'media', keywords: /엔터|미디어|콘텐츠|게임|영상|음원|JYP|YG|SM|하이브/i },
+  { code: '102110', name: '코스피200', tag: 'index_kospi' },
+  { code: '229200', name: '코스닥150', tag: 'index_kosdaq' },
+];
+
+// 시장 환경 판정 — 종가 시계열 → bull/recovering/neutral/bear
+export function judgeMarket(closes) {
+  if (!closes || closes.length < 220) {
+    return { env: 'unknown', label: '데이터 대기', last: null, ma200: null };
+  }
+  const last = closes.at(-1);
+  const ma200 = closes.slice(-200).reduce((a, b) => a + b, 0) / 200;
+  const ma50 = closes.slice(-50).reduce((a, b) => a + b, 0) / 50;
+  const ma200Prev = closes.slice(-220, -20).reduce((a, b) => a + b, 0) / 200;
+  const above200 = last > ma200;
+  const rising200 = ma200 > ma200Prev * 1.005;
+  const above50 = last > ma50;
+  let env = 'neutral';
+  let label = '중립';
+  if (above200 && rising200) { env = 'bull'; label = '강세장'; }
+  else if (!above200 && !rising200) { env = 'bear'; label = '약세장'; }
+  else if (above200 && above50) { env = 'recovering'; label = '회복 시도'; }
+  return { env, label, last, ma200, ma50, ma200Prev, above200, rising200 };
+}
+
+const MARKET_PENALTY_MAP = { bull: 0, recovering: -3, neutral: -5, bear: -10, unknown: 0 };
+const MARKET_NOTE_MAP = {
+  bull: '200일선 위 + 우상향 — 종목 선택 폭이 넓습니다.',
+  bear: '200일선 아래 + 둔화 — Spring/회복 패턴 외엔 보수적으로.',
+  recovering: '회복 시도 중 — 점수 -3 페널티 (정규준식 신중).',
+  neutral: '추세 혼재 — 점수 -5 페널티.',
+  unknown: '시장 데이터 대기.',
+};
+
+async function fetchYahooCloses(symbol) {
+  try {
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1y`;
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(6500),
+      headers: { accept: 'application/json,text/plain,*/*', 'user-agent': UA },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || []).filter(Number.isFinite);
+  } catch {
+    return [];
+  }
+}
+
+// 시장 환경 (정규준식): KOSPI/KOSDAQ 200일선 기준 4단계
+export async function getMarketEnvironment() {
+  const [kospiCloses, kosdaqCloses] = await Promise.all([
+    fetchYahooCloses('^KS11'),
+    fetchYahooCloses('^KQ11'),
+  ]);
+  const kospi = judgeMarket(kospiCloses);
+  const kosdaq = judgeMarket(kosdaqCloses);
+  return {
+    kospi: { ...kospi, penalty: MARKET_PENALTY_MAP[kospi.env] ?? 0, note: MARKET_NOTE_MAP[kospi.env] || '' },
+    kosdaq: { ...kosdaq, penalty: MARKET_PENALTY_MAP[kosdaq.env] ?? 0, note: MARKET_NOTE_MAP[kosdaq.env] || '' },
+  };
+}
+
+// 섹터 강도 (김종봉식): 주요 섹터 ETF 52주 고점 거리
+export async function getSectorStrength() {
+  const settled = await Promise.allSettled(SECTOR_ETFS.map(async (s) => {
+    const [summary, history] = await Promise.all([fetchSummary(s.code), fetchHistory(s.code)]);
+    if (!history || history.length < 60) return null;
+    const last = (summary && summary.price) ?? history.at(-1)?.close ?? null;
+    if (!last) return null;
+    const high52 = Math.max(...history.flatMap((p) => [p.high, p.close]).filter(Number.isFinite));
+    const gap = (last - high52) / high52 * 100;
+    const isStrong = gap >= -3;
+    const status = gap >= -1 ? '신고가' : gap >= -3 ? '신고가권' : gap >= -10 ? '강세' : gap >= -25 ? '조정' : '약세';
+    return { code: s.code, name: s.name, tag: s.tag, last, high52, gap, isStrong, status };
+  }));
+  return settled.map((r) => (r.status === 'fulfilled' ? r.value : null)).filter(Boolean);
+}
+
+// 종목명 키워드 매칭 → 섹터 가산점
+export function computeSectorBonus(stockName, sectorStrength) {
+  if (!stockName || !Array.isArray(sectorStrength)) return { bonus: 0, matched: null, sectorName: null };
+  const strongTags = new Set(sectorStrength.filter((s) => s.isStrong).map((s) => s.tag));
+  for (const def of SECTOR_ETFS) {
+    if (!def.keywords || !strongTags.has(def.tag)) continue;
+    if (def.keywords.test(stockName)) {
+      return { bonus: 5, matched: def.tag, sectorName: def.name };
+    }
+  }
+  return { bonus: 0, matched: null, sectorName: null };
+}
+
+// 종목 시장 → 페널티
+export function computeMarketPenalty(stockMarket, marketEnv) {
+  if (!marketEnv) return { penalty: 0, env: 'unknown', label: '데이터 대기', note: MARKET_NOTE_MAP.unknown };
+  const isKosdaq = stockMarket === 'KOSDAQ150' || stockMarket === 'KOSDAQ' || stockMarket === 'KQ';
+  const m = isKosdaq ? marketEnv.kosdaq : marketEnv.kospi;
+  return {
+    penalty: m?.penalty ?? 0,
+    env: m?.env ?? 'unknown',
+    label: m?.label ?? '데이터 대기',
+    note: m?.note || MARKET_NOTE_MAP.unknown,
   };
 }

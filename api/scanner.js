@@ -4,6 +4,8 @@ import {
   cleanNumber,
   decodeEscaped,
   decodeKor,
+  getMarketEnvironment,
+  getSectorStrength,
 } from './lib/korea-analysis.js';
 
 const NAVER_ENTRY = 'https://finance.naver.com/sise/entryJongmok.naver';
@@ -122,11 +124,18 @@ export default async function handler(req, res) {
   const minValue = Math.max(1_000_000_000, Number(req.query.minValue || DEFAULT_MIN_VALUE));
 
   try {
-    const [kospi200, kosdaq150] = await Promise.all([fetchKospi200(), fetchKosdaq150()]);
+    const [kospi200, kosdaq150, marketEnv, sectorStrength] = await Promise.all([
+      fetchKospi200(),
+      fetchKosdaq150(),
+      getMarketEnvironment(),
+      getSectorStrength(),
+    ]);
     const universe = scope === 'kospi200' ? kospi200 : scope === 'kosdaq150' ? kosdaq150 : [...kospi200, ...kosdaq150];
     const scanned = await mapLimit(uniqueUniverse(universe), 20, (stock) => analyzeKoreanStock(stock, {
       minValue,
       includeFinance: false,
+      marketEnv,
+      sectorStrength,
     }));
     const reasonStats = formatReasonStats(scanned);
     let candidates = scanned.filter((row) => row && !row.excluded && row.patterns?.length);
@@ -145,11 +154,15 @@ export default async function handler(req, res) {
       liquidityPassed: scanned.filter((row) => row && !row.excluded).length,
       candidateCount: candidates.length,
       reasonStats,
+      marketEnv,
+      sectorStrength,
       sourceNotes: [
         '스캐너와 종목 클릭 모달은 같은 한국 종목 분석 엔진을 사용합니다.',
         'KOSPI200은 네이버 KPI200 편입 종목 페이지를 사용합니다.',
         'KOSDAQ150은 Investing 구성 종목 페이지를 우선 사용하고 실패 시 로컬 예비 목록을 사용합니다.',
         '외국인 5일 순매수는 외국인 보유율 변화와 시가총액 기반 추정치입니다.',
+        '시장 환경 게이트(정규준식): KOSPI/KOSDAQ 200일선 기준 강세/회복/중립/약세 판정 후 점수 페널티(-3 ~ -10) 적용.',
+        '섹터 강도(김종봉식): 주요 섹터 ETF가 신고가권일 때 해당 섹터 종목명 키워드 매칭 시 +5 보너스.',
       ],
       items: candidates.slice(0, limit),
     });
