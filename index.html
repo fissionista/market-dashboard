@@ -1467,12 +1467,14 @@ function localSearchTicker(q){
 async function searchTicker(q){
  if(!q.trim())return [];
  const local=localSearchTicker(q);
- let remote=[];
+ let remote=[],hint='';
  try{
    const res=await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`,{cache:'no-store',signal:AbortSignal.timeout(9000)});
-   if(res.ok){const data=await res.json();remote=data.results||[]}
+   if(res.ok){const data=await res.json();remote=data.results||[];hint=data.hint||''}
  }catch(e){}
- return [...local,...remote].filter((x,i,a)=>a.findIndex(y=>String(y.symbol).toUpperCase()===String(x.symbol).toUpperCase())===i);
+ const merged=[...local,...remote].filter((x,i,a)=>a.findIndex(y=>String(y.symbol).toUpperCase()===String(x.symbol).toUpperCase())===i);
+ if(hint)merged.__hint=hint;
+ return merged;
 }
 async function fetchMarketExtras(){
  if(location.protocol==='file:')return null;
@@ -1892,7 +1894,19 @@ function importWorkspace(e){const file=e.target.files?.[0];e.target.value='';if(
 function addSector(){const name=document.getElementById('newSectorName').value.trim(),icon=document.getElementById('newSectorIcon').value.trim()||'★';if(!name)return alert('섹터명을 입력하세요.');profiles[activeProfile].sectors.push({id:'s'+Date.now(),name,icon,stocks:[]});document.getElementById('newSectorName').value='';document.getElementById('newSectorIcon').value='';save();renderAll()}
 function removeSector(id){if(!confirm('섹터를 삭제할까요?'))return;profiles[activeProfile].sectors=sectors().filter(s=>s.id!==id);save();renderAll();fetchAll(true)}
 function moveSector(id,dir){const list=sectors(),i=list.findIndex(s=>s.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];save();lastTvKey='';renderAll()}
-async function searchStock(id){const q=document.getElementById('nm_'+id).value.trim()||document.getElementById('tk_'+id).value.trim();const box=document.getElementById('sr_'+id);if(!q){box.innerHTML='<div class="card-sub">검색어를 입력하세요.</div>';return}box.innerHTML='<div class="card-sub">검색 중...</div>';const rows=await searchTicker(q);box.innerHTML=rows.slice(0,5).map(r=>`<div class="search-result"><span><strong>${r.symbol}</strong> · ${r.name||''} <span style="color:var(--muted)">${r.exchange||''}</span></span><button class="btn btn-green" onclick="pickSearchResult('${id}','${r.symbol.replace(/'/g,'')}','${(r.name||r.symbol).replace(/'/g,'')}','${r.country||'US'}')">선택</button></div>`).join('')||'<div class="card-sub">검색 결과가 없습니다. 티커로 직접 입력해 주세요.</div>'}
+async function searchStock(id){
+ const q=document.getElementById('nm_'+id).value.trim()||document.getElementById('tk_'+id).value.trim();
+ const box=document.getElementById('sr_'+id);
+ if(!q){box.innerHTML='<div class="card-sub">검색어를 입력하세요.</div>';return}
+ box.innerHTML='<div class="card-sub">검색 중...</div>';
+ const rows=await searchTicker(q);
+ const hint=rows.__hint||'';
+ const html=rows.slice(0,8).map(r=>`<div class="search-result"><span><strong>${htmlSafe(r.symbol)}</strong> · ${htmlSafe(r.name||'')} <span style="color:var(--muted)">${htmlSafe(r.exchange||'')}</span></span><button class="btn btn-green" onclick="pickSearchResult('${jsArg(id)}','${jsArg(r.symbol)}','${jsArg(r.name||r.symbol)}','${jsArg(r.country||'US')}')">선택</button></div>`).join('');
+ if(html){box.innerHTML=html;return}
+ // 결과 없을 때: 한국어 hint가 있으면 우선 표시, 없으면 일반 안내
+ const fallback=hint?`<div class="card-sub" style="line-height:1.55">${htmlSafe(hint)}</div>`:'<div class="card-sub">검색 결과가 없습니다. 티커로 직접 입력해 주세요.</div>';
+ box.innerHTML=fallback;
+}
 function pickSearchResult(id,ticker,name,country){document.getElementById('tk_'+id).value=ticker;document.getElementById('nm_'+id).value=name;document.getElementById('ct_'+id).value=country==='KR'?'KR':country==='US'?'US':'ETC';document.getElementById('sr_'+id).innerHTML=''}
 async function addStock(id){let ticker=document.getElementById('tk_'+id).value.trim().toUpperCase(),name=document.getElementById('nm_'+id).value.trim(),country=document.getElementById('ct_'+id).value,note=document.getElementById('nt_'+id).value.trim();if(!ticker&&name){const found=await searchTicker(name);if(found[0]){ticker=found[0].symbol;name=found[0].name||name;country=found[0].country||country}}if(!ticker)return alert('티커를 모르시면 종목명 검색을 먼저 눌러주세요.');const sec=sectors().find(s=>s.id===id);if(!sec)return;const key=tickerKey(ticker);if(sec.stocks.some(s=>tickerKey(s.ticker)===key))return alert('이미 등록된 종목입니다.');sec.stocks.push({ticker,name:name||ticker,country,note});save();renderAll();fetchAll(true)}
 function removeStock(id,ticker){const sec=sectors().find(s=>s.id===id);if(!sec)return;const key=tickerKey(ticker);sec.stocks=sec.stocks.filter(s=>tickerKey(s.ticker)!==key);save();renderAll();fetchAll(true)}
@@ -3017,16 +3031,16 @@ function guruMoveCard(title,rows,empty){
  return `<div class="sector-wrap"><div class="sector-head"><div><div class="sector-name">${htmlSafe(title)}</div><div class="data-note">최근 13F와 직전 13F를 비교한 변화입니다.</div></div><span class="chip ch-b">${rows.length}개</span></div><div class="guru-grid">${rows.length?rows.slice(0,8).map(r=>guruHoldingRow(r,'move')).join(''):`<div class="scanner-empty">${htmlSafe(empty)}</div>`}</div></div>`;
 }
 function guruShortName(row){return row?.ticker||row?.issuer||row?.key||'종목'}
-// 매니저 -> 한국어 인물 이름 (짧게). 매매 코멘트와 chip에서 사용.
+// 매니저 -> 한국어 인물 풀네임. 매매 코멘트와 chip에서 사용.
 const GURU_PERSON_KO={
- 'Duquesne':'드러켄밀러','duquesne':'드러켄밀러','Stanley Druckenmiller':'드러켄밀러',
- 'Berkshire Hathaway':'버핏','berkshire':'버핏','Warren Buffett':'버핏',
- 'Pershing Square':'애크먼','pershing':'애크먼','Bill Ackman':'애크먼',
- 'Appaloosa':'테퍼','appaloosa':'테퍼','David Tepper':'테퍼',
- 'Bridgewater':'달리오','bridgewater':'달리오','Ray Dalio':'달리오',
- 'Scion':'버리','scion':'버리','Michael Burry':'버리',
- 'Tiger Global':'콜먼','tiger':'콜먼','Chase Coleman':'콜먼',
- 'Pelosi Tracker':'펠로시','pelosi':'펠로시','Nancy Pelosi':'펠로시',
+ 'Duquesne':'스탠리 드러켄밀러','duquesne':'스탠리 드러켄밀러','Stanley Druckenmiller':'스탠리 드러켄밀러',
+ 'Berkshire Hathaway':'워렌 버핏','berkshire':'워렌 버핏','Warren Buffett':'워렌 버핏',
+ 'Pershing Square':'빌 애크먼','pershing':'빌 애크먼','Bill Ackman':'빌 애크먼',
+ 'Appaloosa':'데이비드 테퍼','appaloosa':'데이비드 테퍼','David Tepper':'데이비드 테퍼',
+ 'Bridgewater':'레이 달리오','bridgewater':'레이 달리오','Ray Dalio':'레이 달리오',
+ 'Scion':'마이클 버리','scion':'마이클 버리','Michael Burry':'마이클 버리',
+ 'Tiger Global':'체이스 콜먼','tiger':'체이스 콜먼','Chase Coleman':'체이스 콜먼',
+ 'Pelosi Tracker':'낸시 펠로시','pelosi':'낸시 펠로시','Nancy Pelosi':'낸시 펠로시',
 };
 function guruPersonShort(nameOrPerson){
  if(!nameOrPerson)return '';
