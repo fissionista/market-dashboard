@@ -513,6 +513,61 @@ async function fetchNaverAutocomplete(q) {
   }
 }
 
+// 다음 금융 검색 — 한국어 종목명을 가장 안정적으로 잡아내는 소스.
+// 응답에 시장(KOSPI/KOSDAQ)이 빠져있어 detail endpoint로 보강 (병렬).
+async function fetchDaumSearch(q) {
+  try {
+    const data = await fetchJson(
+      `https://finance.daum.net/api/search/quotes?q=${encodeURIComponent(q)}`,
+      {
+        headers: {
+          accept: 'application/json',
+          referer: 'https://finance.daum.net/',
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      },
+      4500,
+    );
+    const stocks = (data?.quotes || []).filter((x) => x?.isStock && !x?.isDelisted && x?.symbolCode);
+    if (!stocks.length) return [];
+    // 시장 정보가 검색 응답에 없으므로 detail endpoint를 병렬 호출. 상위 8개만.
+    const top = stocks.slice(0, 8);
+    const detailed = await Promise.all(top.map(async (s) => {
+      const code = String(s.symbolCode).replace(/^A/, '');
+      let market = 'KOSPI';
+      try {
+        const d = await fetchJson(
+          `https://finance.daum.net/api/quotes/${s.symbolCode}?summary=true`,
+          {
+            headers: {
+              accept: 'application/json',
+              referer: `https://finance.daum.net/quotes/${s.symbolCode}`,
+              'user-agent': 'Mozilla/5.0',
+            },
+          },
+          2500,
+        );
+        if (d?.market) market = String(d.market).toUpperCase().includes('KOSDAQ') ? 'KOSDAQ' : 'KOSPI';
+      } catch (_) {
+        // detail 실패 시 KOSPI 기본 (대부분 KOSPI라 안전)
+      }
+      const suffix = market === 'KOSDAQ' ? '.KQ' : '.KS';
+      return {
+        key: s.name,
+        symbol: `${code}${suffix}`,
+        name: s.name,
+        exchange: market,
+        country: 'KR',
+        tags: s.name,
+        source: 'daum',
+      };
+    }));
+    return uniqueBySymbol(detailed);
+  } catch (_) {
+    return [];
+  }
+}
+
 async function fetchYahooSearch(q, preferred) {
   const yahooQuery = preferred || q;
   const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(yahooQuery)}&quotesCount=8&newsCount=0&enableFuzzyQuery=true`;
@@ -556,26 +611,17 @@ export default async function handler(req, res) {
     return;
   }
 
-  // 한국어 쿼리는 일단 로컬 매치(약한 매치 포함)부터 우선 반환. Yahoo는 한국어를 잘 못 찾고
-  // 외부 API들(KRX, Naver autocomplete)은 인증/세션 문제로 자주 빈 응답이라
-  // 로컬에서 부분 매치라도 잡힌 경우 그걸 먼저 보여줘 사용자 경험을 보장한다.
-  if (isKr && local.length) {
-    res.status(200).json({ results: uniqueBySymbol(local).slice(0, 20) });
-    return;
-  }
-
-  const krx = isKr ? localMatches(q, await getKrxMaster(), 12) : [];
-  const strongKrx = krx.some((x) => scoreMatch(q, x) >= 80);
-  const naver = isKr && !strongKrx ? await fetchNaverAutocomplete(q) : [];
-  const preferred = local[0]?.symbol || krx[0]?.symbol || naver[0]?.symbol || '';
-
-  if (isKr && (krx.length || naver.length)) {
-    res.status(200).json({ results: uniqueBySymbol([...local, ...krx, ...naver]).slice(0, 20) });
-    return;
-  }
-
-  // 한국어 쿼리인데 로컬·KRX·Naver 모두 비었으면 Yahoo는 의미 없는 결과만 반환하므로 호출 생략.
+  // 한국어/한국 종목 쿼리: Daum 검색을 메인 소스로 사용 (KOSPI/KOSDAQ ~2,500종목 커버).
+  // KRX 마스터는 세션 필요해서 자주 실패, Naver autocomplete는 IP 의존이라 불안정.
   if (isKr) {
+    const daum = await fetchDaumSearch(q);
+    const krx = daum.length ? [] : localMatches(q, await getKrxMaster(), 12);
+    const naver = daum.length ? [] : await fetchNaverAutocomplete(q);
+    const merged = uniqueBySymbol([...local, ...daum, ...krx, ...naver]).slice(0, 20);
+    if (merged.length) {
+      res.status(200).json({ results: merged });
+      return;
+    }
     res.status(200).json({
       results: [],
       hint: '한국 종목명을 정확히 입력하거나 6자리 종목코드를 입력해 주세요. 예: 삼성전자, 005930, NAVER',
@@ -583,11 +629,13 @@ export default async function handler(req, res) {
     return;
   }
 
+  // 영문/숫자 쿼리: Yahoo 검색 fallback
+  const preferred = local[0]?.symbol || '';
   try {
     const yahoo = await fetchYahooSearch(q, preferred);
-    res.status(200).json({ results: uniqueBySymbol([...local, ...krx, ...naver, ...yahoo]).slice(0, 20) });
+    res.status(200).json({ results: uniqueBySymbol([...local, ...yahoo]).slice(0, 20) });
   } catch (error) {
-    const fallback = uniqueBySymbol([...local, ...krx, ...naver]).slice(0, 20);
+    const fallback = uniqueBySymbol(local).slice(0, 20);
     res.status(fallback.length ? 200 : 502).json({ error: String(error?.message || error), results: fallback });
   }
 }
