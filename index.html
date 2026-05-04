@@ -800,16 +800,26 @@ main{max-width:1180px;padding:14px}.tabs{width:100%;max-width:620px;background:#
 .guru-managers{display:flex;align-items:center;gap:6px;font-size:10px;color:#667085;border-top:1px dashed var(--border);padding-top:6px;line-height:1.4;flex-wrap:wrap}
 .guru-managers span{flex:1;min-width:0;word-break:keep-all}
 @media(max-width:520px){.guru-grid{grid-template-columns:1fr;gap:6px}.guru-card{padding:11px 12px}.guru-name{font-size:13px}.guru-stat-value{font-size:12px}.guru-stat-label{font-size:9px}.guru-filter-bar{margin:6px 0 12px;padding:8px;flex-wrap:nowrap}.guru-filter-chip{padding:5px 10px;font-size:11px}}
-.capture-summary{width:1280px;background:#f5f8fc;box-sizing:border-box;color:#111827}.capture-summary-card{border-radius:22px;box-shadow:none}.capture-summary-grid{grid-template-columns:repeat(4,1fr)}.capture-risk-grid{display:none}.capture-risk{border:1px solid #e5e7eb;border-left:4px solid #98a2b3;border-radius:10px;padding:9px;background:#fff}.capture-risk.g{border-left-color:#12b76a}.capture-risk.y{border-left-color:#f59e0b}.capture-risk.r{border-left-color:#d92d20}.capture-risk.b{border-left-color:#2563eb}.capture-risk-name{font-size:10px;font-weight:900;color:#667085}.capture-risk-val{font-size:12px;font-weight:950;color:#111827;margin-top:3px}.capture-disclaimer{margin-top:0;font-size:16px;color:#91a0b5;line-height:1.35;text-align:right}.capture-landscape{width:1280px!important;height:844px!important;padding:30px!important;overflow:hidden}.capture-landscape .capture-summary-card{height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto 1fr auto;gap:20px;padding:32px 32px 22px;background:#fff;border:1px solid #d5deea;border-radius:22px}.capture-landscape .capture-summary-head{margin:0;padding-bottom:20px;border-bottom:1px solid #e5ebf2}.capture-landscape .capture-summary-title{font-size:42px;line-height:1.08;letter-spacing:0;color:#111827}.capture-landscape .capture-summary-date{font-size:22px;line-height:1.35;color:#66758a}.capture-landscape .capture-summary-head .capture-metric-sub{font-size:21px;margin-top:12px;color:#66758a;font-weight:900}.capture-landscape .capture-summary-grid{grid-template-columns:repeat(4,1fr)!important;grid-template-rows:repeat(3,1fr);gap:14px}.capture-landscape .capture-metric{min-height:0;height:100%;padding:20px 18px;display:flex;flex-direction:column;justify-content:center;background:#f8fafc;border:1px solid #d9e3ef;border-radius:16px}.capture-landscape .capture-metric-label{font-size:19px;margin-bottom:12px;color:#66758a}.capture-landscape .capture-metric-value{font-size:42px;line-height:1.02;color:#111827}.capture-landscape .capture-metric-sub{font-size:20px;margin-top:12px;min-height:22px;color:#66758a}.capture-landscape .capture-metric.up .capture-metric-value,.capture-landscape .capture-metric.up .capture-metric-sub{color:#df2d22}.capture-landscape .capture-metric.down .capture-metric-value,.capture-landscape .capture-metric.down .capture-metric-sub{color:#2362d1}.capture-landscape .capture-metric.warn{background:#fffbf2;border-color:#f6c65b}.capture-landscape .capture-metric.safe{background:#f4fff7;border-color:#80d69f}.capture-landscape .capture-risk-grid{display:none!important}.capture-landscape .capture-summary-alert{margin-top:0;padding:18px 22px;font-size:22px;line-height:1.35;border-radius:15px;border-left-width:6px;background:#f1f5f9}.capture-landscape .capture-disclaimer{font-size:18px;margin-top:-4px}
-.capture-judge{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 18px;border-radius:14px;background:#f1f5f9;border-left:5px solid #2563eb}
+.capture-summary{width:1280px;background:#f5f8fc;box-sizing:border-box;color:#111827}.capture-summary-card{border-radius:22px;box-shadow:none}.capture-summary-grid{grid-template-columns:repeat(4,1fr)}.capture-risk-grid{display:none}.capture-risk{border:1px solid #e5e7eb;border-left:4px solid #98a2b3;border-radius:10px;padding:9px;background:#fff}.capture-risk.g{border-left-color:#12b76a}.capture-risk.y{border-left-color:#f59e0b}.capture-risk.r{border-left-color:#d92d20}.capture-risk.b{border-left-color:#2563eb}.capture-risk-name{font-size:10px;font-weight:900;color:#667085}.capture-risk-val{font-size:12px;font-weight:950;color:#111827;margin-top:3px}.capture-disclaimer{margin-top:0;font-size:16px;color:#91a0b5;line-height:1.35;text-align:right}.capture-landscape{width:1280px!important;min-height:780px!important;padding:30px!important;overflow:visible}.capture-landscape .capture-summary-card{min-height:720px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;padding:30px 32px 22px;background:#fff;border:1px solid #d5deea;border-radius:22px}
+.capture-landscape .capture-summary-grid{flex:1}.capture-landscape .capture-summary-head{margin:0;padding-bottom:14px;border-bottom:1px solid #e5ebf2;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.capture-landscape .capture-summary-title{font-size:32px;line-height:1.08;letter-spacing:0;color:#111827;font-weight:950}.capture-landscape .capture-summary-date{font-size:18px;line-height:1.35;color:#66758a;font-weight:800;text-align:right}.capture-landscape .capture-summary-head .capture-metric-sub{font-size:14px;margin-top:6px;color:#66758a;font-weight:800}.capture-landscape .capture-summary-grid{display:grid;grid-template-columns:repeat(4,1fr)!important;grid-template-rows:repeat(3,minmax(140px,auto));gap:14px}.capture-landscape .capture-metric{min-height:0;height:100%;padding:20px 18px;display:flex;flex-direction:column;justify-content:center;background:#f8fafc;border:1px solid #d9e3ef;border-radius:16px}.capture-landscape .capture-metric-label{font-size:19px;margin-bottom:12px;color:#66758a}.capture-landscape .capture-metric-value{font-size:42px;line-height:1.02;color:#111827}.capture-landscape .capture-metric-sub{font-size:20px;margin-top:12px;min-height:22px;color:#66758a}.capture-landscape .capture-metric.up .capture-metric-value,.capture-landscape .capture-metric.up .capture-metric-sub{color:#df2d22}.capture-landscape .capture-metric.down .capture-metric-value,.capture-landscape .capture-metric.down .capture-metric-sub{color:#2362d1}.capture-landscape .capture-metric.warn{background:#fffbf2;border-color:#f6c65b}.capture-landscape .capture-metric.safe{background:#f4fff7;border-color:#80d69f}.capture-landscape .capture-risk-grid{display:none!important}.capture-landscape .capture-summary-alert{margin-top:0;padding:18px 22px;font-size:22px;line-height:1.35;border-radius:15px;border-left-width:6px;background:#f1f5f9}.capture-landscape .capture-disclaimer{font-size:12px;margin-top:0;color:#94a3b8;font-weight:700}
+.capture-judge{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:11px;background:#f1f5f9;border-left:4px solid #2563eb;flex-wrap:nowrap;overflow:hidden}
 .capture-judge.warn{background:#fff7ed;border-left-color:#f59e0b}
 .capture-judge.safe{background:#f0fdf4;border-left-color:#16a34a}
-.capture-judge-mode{font-size:17px;font-weight:950;color:#111827;letter-spacing:-.01em;flex-shrink:0}
-.capture-judge-meta{font-size:11px;font-weight:900;color:#475569;display:flex;gap:14px;flex-wrap:wrap}
-.capture-judge-meta span{display:inline-flex;align-items:center}
-.capture-landscape .capture-judge{padding:18px 26px;border-radius:16px;border-left-width:7px;gap:18px}
-.capture-landscape .capture-judge-mode{font-size:28px}
-.capture-landscape .capture-judge-meta{font-size:16px;gap:22px}
+.capture-judge-mode{font-size:15px;font-weight:950;color:#111827;letter-spacing:-.01em;flex-shrink:0}
+.capture-judge-stage{font-size:11px;font-weight:800;color:#475569;background:#fff;border:1px solid #e5ebf2;border-radius:99px;padding:3px 9px;flex-shrink:0}
+.capture-judge-score{font-size:11px;font-weight:800;color:#0f172a;flex-shrink:0;margin-left:auto}
+.capture-judge-score em{font-style:normal;color:#94a3b8;font-weight:700;margin-right:3px}
+.capture-judge-score+.capture-judge-score{margin-left:0}
+.capture-landscape .capture-judge{padding:14px 22px;border-radius:13px;border-left-width:5px;gap:18px}
+.capture-landscape .capture-judge-mode{font-size:24px}
+.capture-landscape .capture-judge-stage{font-size:15px;padding:5px 14px}
+.capture-landscape .capture-judge-score{font-size:15px}
+.capture-landscape .capture-metric-label{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font-size:18px;margin-bottom:10px;color:#1f2937;font-weight:900;text-transform:none;letter-spacing:0;line-height:1.1}
+.capture-landscape .capture-metric-label .cap-ko{font-size:12px;font-weight:700;color:#9aa5b8;letter-spacing:0;line-height:1.1}
+.capture-landscape .capture-metric{padding:16px 16px}
+.capture-landscape .capture-metric-value{font-size:38px;line-height:1.02;color:#111827}
+.capture-landscape .capture-metric-sub{font-size:15px;margin-top:8px;min-height:18px;color:#66758a}
+.capture-metric-label .cap-ko{display:block;font-size:10px;font-weight:700;color:#9aa5b8;margin-top:1px}
 .card-sub-ko{font-size:11px;font-weight:700;color:#94a3b8;margin-left:2px;letter-spacing:0}
 @media(max-width:900px){.brief-grid{grid-template-columns:repeat(3,1fr)}.market-hero{grid-template-columns:1fr}.market-kpi-grid{grid-template-columns:repeat(3,1fr)}.risk-axis-grid{grid-template-columns:repeat(2,1fr)}.watch-row{grid-template-columns:minmax(0,1fr) auto auto;gap:6px}.watch-cell{display:none}.watch-row>.watch-cell:nth-child(2),.watch-row>.watch-cell:nth-child(3){display:block;text-align:right}.watch-row>.watch-cell:nth-child(2) strong,.watch-row>.watch-cell:nth-child(3) strong{font-size:13px}.watch-row>.watch-cell:nth-child(2) span,.watch-row>.watch-cell:nth-child(3) span{font-size:10px}.watch-actions{grid-column:1/4;justify-content:flex-start;border-top:1px solid var(--border);padding-top:7px}.capture-risk-grid{grid-template-columns:repeat(5,1fr)}.scanner-summary,.scanner-gate-grid{grid-template-columns:repeat(2,1fr)}.scanner-row{grid-template-columns:1fr auto}.scanner-cell{display:none}.scanner-patterns{grid-column:1/3}.scanner-row .watch-actions{grid-column:1/3}}
 @media(max-width:900px){.leader-etf-full .watch-row,#leader-etfs .watch-row{grid-template-columns:minmax(0,1fr) 82px 58px!important;gap:8px;align-items:center}.leader-etf-full .watch-row>.watch-cell,#leader-etfs .watch-row>.watch-cell{display:none!important}.leader-etf-full .watch-row>.watch-cell:nth-child(2),#leader-etfs .watch-row>.watch-cell:nth-child(2),.leader-etf-full .watch-row>.watch-cell:nth-child(4),#leader-etfs .watch-row>.watch-cell:nth-child(4){display:block!important;text-align:right;min-width:0}.leader-etf-full .watch-row>.watch-cell:nth-child(2) strong,#leader-etfs .watch-row>.watch-cell:nth-child(2) strong,.leader-etf-full .watch-row>.watch-cell:nth-child(4) strong,#leader-etfs .watch-row>.watch-cell:nth-child(4) strong{font-size:12px;line-height:1.15;white-space:normal}.leader-etf-full .watch-row>.watch-cell:nth-child(2) span,#leader-etfs .watch-row>.watch-cell:nth-child(2) span,.leader-etf-full .watch-row>.watch-cell:nth-child(4) span,#leader-etfs .watch-row>.watch-cell:nth-child(4) span{font-size:9px;line-height:1.15}.leader-etf-full .watch-actions,#leader-etfs .watch-actions{display:none!important}.leader-etf-full .watch-name,#leader-etfs .watch-name{font-size:13px}.leader-etf-full .watch-meta,#leader-etfs .watch-meta{font-size:10px}}
@@ -2000,8 +2010,9 @@ async function captureChartModal(){
 }
 function htmlSafe(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function captureToneByChange(chg){return chg==null?'':chg>=0?'up':'down'}
-function captureMetricHtml(label,value,sub='',tone=''){
- return `<div class="capture-metric ${tone}"><div class="capture-metric-label">${htmlSafe(label)}</div><div class="capture-metric-value">${value}</div><div class="capture-metric-sub">${sub||''}</div></div>`;
+function captureMetricHtml(label,value,sub='',tone='',ko=''){
+ const koHtml=ko?`<span class="cap-ko">${htmlSafe(ko)}</span>`:'';
+ return `<div class="capture-metric ${tone}"><div class="capture-metric-label">${htmlSafe(label)}${koHtml}</div><div class="capture-metric-value">${value}</div><div class="capture-metric-sub">${sub||''}</div></div>`;
 }
 function captureKeyMetric(label,key,dec=0,prefix='',suffix=''){
  const p=getPrice(key),chg=getChangePct(key),high=getHigh52(key,null),near=nearHighLabel(p,high);
@@ -2722,48 +2733,53 @@ buildDashboardCaptureSummary=function(){
        time=d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
  const fg=getFearGreed(),fgs=fg!=null?fgStatus(fg):null,
        judgement=(typeof marketJudgement==='function'?marketJudgement():null);
- // === 색상 규칙 단순화 ===
- // 1) 일반 가격 셀(지수·금·BTC·엔달러): 일간 등락만으로 색칠 (red=상승, blue=하락)
- // 2) 진짜 게이지(VIX·금리·달러·유가): 임계값 위면 warn(노랑) 오버라이드 — 톤 충돌 방지
- // 3) F&G만 safe(공포)/warn(탐욕) 양쪽 적용 (역발상 신호라 색이 명확해야 함)
+ // === 색상 규칙 ===
  const thresholdWarn=(v,warn,risk)=>{if(v==null||warn==null)return null;if(risk!=null&&v>=risk)return 'warn';if(v>=warn)return 'warn';return null};
- const priceCell=(label,key,fmtFn)=>{
+ // 지수: 신고가권 = warn(과열 주의), 고점 -20%↓ = safe(분할매수 후보), 그 외 = 일간 등락
+ const indexCell=(main,ko,key)=>{
+  const p=getPrice(key),chg=getChangePct(key),high=getHigh52(key,null),dd=drawdown(p,high);
+  const ddText=dd==null?'':dd>=-1?'🚀 신고가권':`고점 ${dd.toFixed(1)}%`;
+  const sub=[chg!=null?fmtPct(chg):'',ddText].filter(Boolean).join(' · ');
+  let tone=captureToneByChange(chg);
+  if(dd!=null){if(dd>=-1)tone='warn';else if(dd<=-20)tone='safe'}
+  return captureMetricHtml(main,p!=null?fmt(p,0):'—',htmlSafe(sub),tone,ko);
+ };
+ // 가격 셀(금·BTC·엔달러): 일간 등락만
+ const priceCell=(main,ko,key,fmtFn)=>{
   const p=getPrice(key),chg=getChangePct(key);
   const sub=chg!=null?fmtPct(chg):'데이터 대기';
-  return captureMetricHtml(label,p!=null?fmtFn(p):'—',htmlSafe(sub),captureToneByChange(chg));
+  return captureMetricHtml(main,p!=null?fmtFn(p):'—',htmlSafe(sub),captureToneByChange(chg),ko);
  };
- const indexCell=(label,key)=>priceCell(label,key,p=>fmt(p,0));
- const gaugeCell=(label,key,statusFn,fmtFn,warn,risk)=>{
+ // 게이지(VIX·금리·달러·유가): 임계값 위면 warn 우선
+ const gaugeCell=(main,ko,key,statusFn,fmtFn,warn,risk)=>{
   const p=getPrice(key),chg=getChangePct(key),s=p!=null?statusFn(p):null;
   const sub=[chg!=null?fmtPct(chg):'',s?s.label:''].filter(Boolean).join(' · ');
-  // 임계값 초과 시 warn으로 강조 (게이지는 위험 신호가 등락보다 중요)
   const tone=thresholdWarn(p,warn,risk)||captureToneByChange(chg);
-  return captureMetricHtml(label,p!=null?fmtFn(p):'—',htmlSafe(sub),tone);
+  return captureMetricHtml(main,p!=null?fmtFn(p):'—',htmlSafe(sub),tone,ko);
  };
  const fgCell=()=>{
   const sub=fgs?fgs.label:'데이터 대기';
   const tone=fg==null?'':fg<=refs.fg_fear?'safe':fg>=refs.fg_greed?'warn':'';
-  return captureMetricHtml('Fear & Greed · 공포·탐욕',fg!=null?String(Math.round(fg)):'—',htmlSafe(sub),tone);
+  return captureMetricHtml('Fear & Greed',fg!=null?String(Math.round(fg)):'—',htmlSafe(sub),tone,'공포·탐욕');
  };
- const goldCell=(label,key,fmtFn)=>{
+ const goldCell=(main,ko,key,fmtFn)=>{
   const p=getPrice(key),chg=getChangePct(key);
   const krw=p!=null?fmtKrwValue(p):'';
   const sub=[chg!=null?fmtPct(chg):'',krw].filter(Boolean).join(' · ');
-  return captureMetricHtml(label,p!=null?fmtFn(p):'—',htmlSafe(sub),captureToneByChange(chg));
+  return captureMetricHtml(main,p!=null?fmtFn(p):'—',htmlSafe(sub),captureToneByChange(chg),ko);
  };
- // 상단 마켓 포지션 한 줄 배너 (모드 + 단계 + 점수). action 텍스트는 제거 — 길이 들쭉날쭉.
+ // 마켓 포지션: 칩 형식 한 줄로 압축 (높이 고정)
  const judgeChipCls=judgement?.cls==='c-danger'||judgement?.cls==='c-warn'?'warn':judgement?.cls==='c-safe'?'safe':'';
- const judgeBanner=judgement?`<div class="capture-judge ${judgeChipCls}"><div class="capture-judge-mode">${htmlSafe(judgement.mode)}</div><div class="capture-judge-meta"><span>${htmlSafe(judgement.stage)}</span><span>위험 ${judgement.riskTemp}</span><span>기회 ${judgement.opportunity}</span></div></div>`:'';
+ const judgeBanner=judgement?`<div class="capture-judge ${judgeChipCls}"><span class="capture-judge-mode">${htmlSafe(judgement.mode)}</span><span class="capture-judge-stage">${htmlSafe(judgement.stage)}</span><span class="capture-judge-score"><em>위험</em> ${judgement.riskTemp}</span><span class="capture-judge-score"><em>기회</em> ${judgement.opportunity}</span></div>`:'';
  const el=document.createElement('div');
  el.id='dashboardCompactCapture';
  el.className='capture-summary capture-landscape';
  el.dataset.captureWidth='1280';
- el.dataset.captureHeight='844';
+ // 높이는 콘텐츠 기준 auto. 위/아래가 잘리는 일이 없도록 고정 높이 제거.
  el.style.position='absolute';
  el.style.left='0';
  el.style.top='0';
  el.style.width='1280px';
- el.style.height='844px';
  el.style.zIndex='-1000';
  el.style.pointerEvents='none';
  el.innerHTML=`<div class="capture-summary-card">
@@ -2776,18 +2792,18 @@ buildDashboardCaptureSummary=function(){
   </div>
   ${judgeBanner}
   <div class="capture-summary-grid">
-   ${indexCell('S&P 500 · 미국 대형주','sp')}
-   ${indexCell('나스닥 · 미국 기술주','nasdaq')}
-   ${indexCell('코스피 · 한국 대형주','kospi')}
-   ${indexCell('코스닥 · 한국 중소형','kosdaq')}
+   ${indexCell('S&P 500','미국 대형주','sp')}
+   ${indexCell('나스닥','미국 기술주','nasdaq')}
+   ${indexCell('코스피','한국 대형주','kospi')}
+   ${indexCell('코스닥','한국 중소형','kosdaq')}
    ${fgCell()}
-   ${gaugeCell('VIX · 변동성지수','vix',vixStatus,v=>fmt(v,1),refs.vix_warn,refs.vix_risk)}
-   ${gaugeCell('미국 10년물 · 장기금리','y10',yieldStatus,v=>`${fmt(v,2)}%`,refs.y10_warn,refs.y10_risk)}
-   ${gaugeCell('USD/KRW · 원달러 환율','usdkrw',usdkrwStatus,v=>`₩${fmt(v,0)}`,refs.usdkrw_warn,refs.usdkrw_risk)}
-   ${gaugeCell('WTI · 원유 선물','wti',wtiStatus,v=>`$${fmt(v,2)}`,refs.wti_warn,refs.wti_risk)}
-   ${goldCell('Gold · 금 (온스)','gold',v=>`$${fmt(v,0)}`)}
-   ${goldCell('Bitcoin · 비트코인','btc',v=>`$${fmt(v,0)}`)}
-   ${priceCell('USD/JPY · 엔달러 환율','usdjpy',v=>fmt(v,1))}
+   ${gaugeCell('VIX','변동성지수','vix',vixStatus,v=>fmt(v,1),refs.vix_warn,refs.vix_risk)}
+   ${gaugeCell('미국 10년물','장기금리','y10',yieldStatus,v=>`${fmt(v,2)}%`,refs.y10_warn,refs.y10_risk)}
+   ${gaugeCell('USD/KRW','원달러 환율','usdkrw',usdkrwStatus,v=>`₩${fmt(v,0)}`,refs.usdkrw_warn,refs.usdkrw_risk)}
+   ${gaugeCell('WTI','원유 선물','wti',wtiStatus,v=>`$${fmt(v,2)}`,refs.wti_warn,refs.wti_risk)}
+   ${goldCell('Gold','금 (온스)','gold',v=>`$${fmt(v,0)}`)}
+   ${goldCell('Bitcoin','비트코인','btc',v=>`$${fmt(v,0)}`)}
+   ${priceCell('USD/JPY','엔달러 환율','usdjpy',v=>fmt(v,1))}
   </div>
   <div class="capture-disclaimer">Market Check · 투자 판단 보조용 요약</div>
  </div>`;
