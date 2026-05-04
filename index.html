@@ -2871,8 +2871,20 @@ function scannerSectorBonus(row){
  const hit=re?leaders.find(e=>re.test(`${e.name} ${e.note||''} ${e.theme||''} ${e.ticker}`)):null;
  return hit?{score:5,label:`${tag} · ${hit.ticker} 신고가권`}:{score:0,label:`${tag} · 주도 ETF 대기`};
 }
+// scanner API의 row.market은 string 또는 {env,label,...} 객체일 수 있음. 안전하게 정규화.
+function scannerRowMarketKey(row){
+ if(typeof row?.market==='string'&&/kosdaq/i.test(row.market))return 'kosdaq';
+ if(row?.market&&typeof row.market==='object'&&/kosdaq/i.test(row.market.env||row.market.label||''))return 'kosdaq';
+ if(/\.KQ$/i.test(String(row?.symbol||'')))return 'kosdaq';
+ return 'kospi';
+}
+function scannerRowMarketLabel(row){
+ if(typeof row?.market==='string')return row.market;
+ if(row?.market&&typeof row.market==='object')return row.market.label||row.market.env||'';
+ return /\.KQ$/i.test(String(row?.symbol||''))?'KOSDAQ':'KOSPI';
+}
 function scannerAdjustedScore(row){
- const base=Number.isFinite(row.score)?row.score:0,gate=scannerMarketGate((row.market||'').includes('KOSDAQ')?'kosdaq':'kospi'),sector=scannerSectorBonus(row);
+ const base=Number.isFinite(row.score)?row.score:0,gate=scannerMarketGate(scannerRowMarketKey(row)),sector=scannerSectorBonus(row);
  return Math.max(0,Math.min(100,base+(gate.penalty||0)+(sector.score||0)));
 }
 function scannerScoreLine(name,score,detail){
@@ -2881,7 +2893,7 @@ function scannerScoreLine(name,score,detail){
  return `<div class="scanner-score-line"><div class="scanner-score-name">${htmlSafe(name)}</div><div class="scanner-score-val ${cls}">${sign}${score}</div><div class="scanner-score-detail">${htmlSafe(detail||'')}</div></div>`;
 }
 function scannerBreakdownHtml(row){
- const bd=row.scoreBreakdown||{},patterns=(row.patterns||[]).map(p=>`${p.label}${p.score?` +${p.score}`:''}`).join(' · '),gate=scannerMarketGate((row.market||'').includes('KOSDAQ')?'kosdaq':'kospi'),sector=scannerSectorBonus(row),total=Math.round(scannerAdjustedScore(row));
+ const bd=row.scoreBreakdown||{},patterns=(row.patterns||[]).map(p=>`${p.label}${p.score?` +${p.score}`:''}`).join(' · '),gate=scannerMarketGate(scannerRowMarketKey(row)),sector=scannerSectorBonus(row),total=Math.round(scannerAdjustedScore(row));
  const lines=[
   scannerScoreLine('패턴',bd.pattern,patterns||'감지 패턴 없음'),
   scannerScoreLine('외국인',bd.foreign,row.foreign?.net5Value!=null?`5일 ${scannerMoney(row.foreign.net5Value)} · 20일대비 ${row.foreign.strength!=null?fmt(row.foreign.strength,1)+'배':'대기'}`:'외국인 보유율 데이터 부족'),
@@ -2904,7 +2916,8 @@ function scannerRowHtml(row){
  const symbol=row.symbol||`${row.code}.KS`,price=row.analysisPrice??row.price,chg=row.changePct;
  const gap=row.highGap!=null?row.highGap.toFixed(1)+'%':'—',score=row.score!=null?Math.round(scannerAdjustedScore(row)):'—';
  const rocket=row.highGap!=null&&row.highGap>=-0.5;
- return `<div class="scanner-item"><div class="scanner-row clickable" onclick="openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')"><div class="watch-main"><div class="scanner-name">${rocket?'🚀 ':''}${htmlSafe(row.name||row.code)}</div><div class="scanner-meta">${htmlSafe(row.code)} · ${htmlSafe(row.market||'KR')} · ${htmlSafe(row.source||'')}</div></div><div class="scanner-cell"><strong>${fmtStockPrice(price,'KRW')}</strong><span style="${pctColor(chg)}">${chg!=null?fmtPct(chg):'등락률 대기'}</span></div><div class="scanner-cell"><strong>${gap}</strong><span>52주 고점 대비</span></div><div class="scanner-patterns">${(row.patterns||[]).slice(0,4).map(scannerPatternChip).join('')}</div><div class="scanner-cell">${scannerForeignText(row)}</div><div class="scanner-cell"><strong>${score}</strong><span>보정 강도</span></div><div class="watch-actions"><button class="btn mini-btn" onclick="event.stopPropagation();openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')">차트</button><button class="btn btn-green mini-btn" onclick="event.stopPropagation();addScannerCandidate('${jsArg(row.code)}','${jsArg(row.name||row.code)}','${jsArg(row.market||'KR')}')">추가</button></div></div>${scannerBreakdownHtml(row)}</div>`;
+ const marketLabel=scannerRowMarketLabel(row);
+ return `<div class="scanner-item"><div class="scanner-row clickable" onclick="openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')"><div class="watch-main"><div class="scanner-name">${rocket?'🚀 ':''}${htmlSafe(row.name||row.code)}</div><div class="scanner-meta">${htmlSafe(row.code)} · ${htmlSafe(marketLabel||'KR')} · ${htmlSafe(row.source||'')}</div></div><div class="scanner-cell"><strong>${fmtStockPrice(price,'KRW')}</strong><span style="${pctColor(chg)}">${chg!=null?fmtPct(chg):'등락률 대기'}</span></div><div class="scanner-cell"><strong>${gap}</strong><span>52주 고점 대비</span></div><div class="scanner-patterns">${(row.patterns||[]).slice(0,4).map(scannerPatternChip).join('')}</div><div class="scanner-cell">${scannerForeignText(row)}</div><div class="scanner-cell"><strong>${score}</strong><span>보정 강도</span></div><div class="watch-actions"><button class="btn mini-btn" onclick="event.stopPropagation();openChartByTicker('${jsArg(symbol)}','${jsArg(row.name||row.code)}','KR')">차트</button><button class="btn btn-green mini-btn" onclick="event.stopPropagation();addScannerCandidate('${jsArg(row.code)}','${jsArg(row.name||row.code)}','${jsArg(marketLabel||'KR')}')">추가</button></div></div>${scannerBreakdownHtml(row)}</div>`;
 }
 function renderScanner(){
  ensureScannerLayout();
@@ -2912,8 +2925,15 @@ function renderScanner(){
  if(scannerState.loading){box.innerHTML='<div class="scanner-load">코스피200 + 코스닥150 후보를 계산하는 중입니다. 보통 몇 초 걸립니다.</div>';return}
  if(scannerState.error){box.innerHTML=`<div class="scanner-empty">${htmlSafe(scannerState.error)}</div>`;return}
  if(!scannerState.loaded){box.innerHTML='<div class="scanner-empty">스캔 실행을 누르면 코스피200 + 코스닥150에서 유동성 필터를 먼저 통과한 후보만 추립니다.</div>';return}
- const data=scannerState.data||{},items=data.items||[],reasons=data.reasonStats||{};
- box.innerHTML=`${scannerGateBannerHtml()}<div class="scanner-summary"><div class="scanner-kpi"><div class="k">스캔 종목</div><div class="v">${data.scanned??'—'}</div></div><div class="scanner-kpi"><div class="k">유동성 통과</div><div class="v">${data.liquidityPassed??'—'}</div></div><div class="scanner-kpi"><div class="k">후보 종목</div><div class="v">${data.candidateCount??items.length}</div></div><div class="scanner-kpi"><div class="k">기준</div><div class="v" style="font-size:18px">${scannerMoney(data.minValue)}/일</div></div></div><div class="scanner-source">${(data.sourceNotes||[]).map(htmlSafe).join('<br>')}${Object.keys(reasons).length?`<br>제외 사유: ${Object.entries(reasons).map(([k,v])=>`${htmlSafe(k)} ${v}개`).join(' · ')}`:''}<br>보정 강도는 API 원점수에 시장 환경 페널티와 주도 섹터 ETF 보너스를 화면에서 더해 보여줍니다.</div><div class="watch-list">${items.length?items.map(scannerRowHtml).join(''):'<div class="scanner-empty">현재 조건을 통과한 후보가 없습니다. 유동성 기준을 낮추거나 전체 패턴으로 다시 확인해 보세요.</div>'}</div>`;
+ try{
+  const data=scannerState.data||{},items=data.items||[],reasons=data.reasonStats||{};
+  // 항목별 try/catch — 한 항목이 깨져도 나머지는 표시
+  const rowsHtml=items.map(r=>{try{return scannerRowHtml(r)}catch(e){console.error('scannerRowHtml err',r?.code,e);return `<div class="scanner-empty" style="text-align:left;padding:8px 12px">${htmlSafe(r?.name||r?.code||'unknown')} 렌더 실패: ${htmlSafe(String(e?.message||e))}</div>`}}).join('');
+  box.innerHTML=`${scannerGateBannerHtml()}<div class="scanner-summary"><div class="scanner-kpi"><div class="k">스캔 종목</div><div class="v">${data.scanned??'—'}</div></div><div class="scanner-kpi"><div class="k">유동성 통과</div><div class="v">${data.liquidityPassed??'—'}</div></div><div class="scanner-kpi"><div class="k">후보 종목</div><div class="v">${data.candidateCount??items.length}</div></div><div class="scanner-kpi"><div class="k">기준</div><div class="v" style="font-size:18px">${scannerMoney(data.minValue)}/일</div></div></div><div class="scanner-source">${(data.sourceNotes||[]).map(htmlSafe).join('<br>')}${Object.keys(reasons).length?`<br>제외 사유: ${Object.entries(reasons).map(([k,v])=>`${htmlSafe(k)} ${v}개`).join(' · ')}`:''}<br>보정 강도는 API 원점수에 시장 환경 페널티와 주도 섹터 ETF 보너스를 화면에서 더해 보여줍니다.</div><div class="watch-list">${items.length?rowsHtml:'<div class="scanner-empty">현재 조건을 통과한 후보가 없습니다. 유동성 기준을 낮추거나 전체 패턴으로 다시 확인해 보세요.</div>'}</div>`;
+ }catch(e){
+  console.error('renderScanner failed',e);
+  box.innerHTML=`<div class="scanner-empty" style="text-align:left;padding:14px 18px;line-height:1.6"><strong>후보 발굴 화면 렌더링 중 오류가 발생했습니다.</strong><br>${htmlSafe(String(e?.message||e))}<br>새로고침 후 다시 "스캔 실행"을 눌러보세요.</div>`;
+ }
 }
 async function fetchScanner(force=false){
  ensureScannerLayout();
